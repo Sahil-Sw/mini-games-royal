@@ -1,5 +1,5 @@
-import { Player, PlayerResult } from './player';
-import { MiniGameType } from './minigame';
+import { Player, PlayerResult } from './player.js';
+import { MiniGameType } from './minigame.js';
 
 export type GameMode = 'team' | 'ffa' | 'single';
 export type GameState = 'lobby' | 'countdown' | 'playing' | 'roundResult' | 'finished';

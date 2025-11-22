@@ -1,4 +1,4 @@
-import { MiniGameConfig } from './types/minigame';
+import { MiniGameConfig } from './types/minigame.js';
 
 export const GAME_CONSTANTS = {
   MAX_PLAYERS: 10,

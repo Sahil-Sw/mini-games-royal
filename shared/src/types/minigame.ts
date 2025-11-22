@@ -1,4 +1,4 @@
-import { PlayerResult } from './player';
+import { PlayerResult } from './player.js';
 
 export type MiniGameType = 
   | 'speed-math'

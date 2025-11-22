@@ -1,6 +1,6 @@
-import { GameRoom, GameConfig, RoundData } from './game';
-import { Player, PlayerResult } from './player';
-import { MiniGameType, MiniGameStartEvent, MiniGameSubmitEvent } from './minigame';
+import { GameRoom, GameConfig, RoundData } from './game.js';
+import { Player, PlayerResult } from './player.js';
+import { MiniGameType, MiniGameStartEvent, MiniGameSubmitEvent } from './minigame.js';
 
 // Client to Server events
 export interface ClientToServerEvents {
