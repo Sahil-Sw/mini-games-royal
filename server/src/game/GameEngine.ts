@@ -1,5 +1,5 @@
-import type { GameRoom, RoundData, MiniGameType, PlayerResult } from '@shared/index';
-import { GAME_CONSTANTS } from '@shared/index';
+import type { GameRoom, RoundData, MiniGameType, PlayerResult } from '@minigame/shared';
+import { GAME_CONSTANTS } from '@minigame/shared';
 
 export class GameEngine {
   async startGame(room: GameRoom): Promise<void> {

@@ -1,8 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { nanoid } from 'nanoid';
-import type { ClientToServerEvents, ServerToClientEvents, SocketData } from '@shared/types/socket';
-import type { Player } from '@shared/index';
-import { AVATARS, GAME_CONSTANTS, MINIGAME_CONFIGS } from '@shared/index';
+import type { ClientToServerEvents, ServerToClientEvents, SocketData, Player } from '@minigame/shared';
+import { AVATARS, GAME_CONSTANTS, MINIGAME_CONFIGS } from '@minigame/shared';
 import { RoomManager } from '../game/RoomManager.js';
 import { GameEngine } from '../game/GameEngine.js';
 

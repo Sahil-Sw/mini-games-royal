@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
-import type { ClientToServerEvents, ServerToClientEvents, SocketData } from '@shared/types/socket';
+import type { ClientToServerEvents, ServerToClientEvents, SocketData } from '@minigame/shared';
 import { setupSocketHandlers } from './socket/handlers.js';
 
 const app = express();

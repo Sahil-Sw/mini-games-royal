@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
-import type { GameRoom, GameConfig, Player, Team } from '@shared/index';
-import { GAME_CONSTANTS, TEAM_COLORS } from '@shared/index';
+import type { GameRoom, GameConfig, Player, Team } from '@minigame/shared';
+import { GAME_CONSTANTS, TEAM_COLORS } from '@minigame/shared';
 
 export class RoomManager {
   private rooms: Map<string, GameRoom> = new Map();
