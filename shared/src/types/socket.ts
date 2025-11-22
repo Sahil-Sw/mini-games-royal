@@ -5,8 +5,8 @@ import { MiniGameType, MiniGameStartEvent, MiniGameSubmitEvent } from './minigam
 // Client to Server events
 export interface ClientToServerEvents {
   // Room management
-  'room:create': (config: GameConfig, playerName: string, callback: (response: { success: boolean; room?: GameRoom; error?: string }) => void) => void;
-  'room:join': (code: string, playerName: string, platform: 'web' | 'mobile', callback: (response: { success: boolean; room?: GameRoom; error?: string }) => void) => void;
+  'room:create': (config: GameConfig, playerName: string, callback: (response: { success: boolean; room?: GameRoom; playerId?: string; error?: string }) => void) => void;
+  'room:join': (code: string, playerName: string, platform: 'web' | 'mobile', callback: (response: { success: boolean; room?: GameRoom; playerId?: string; error?: string }) => void) => void;
   'room:leave': () => void;
   
   // Lobby

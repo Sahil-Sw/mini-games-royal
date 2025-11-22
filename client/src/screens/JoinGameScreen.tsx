@@ -1,38 +1,52 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useSocket } from '../contexts/SocketContext';
-import { useGameStore } from '../store/gameStore';
-import { detectPlatform } from '../utils/platform';
-import { storage } from '../utils/storage';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useSocket } from "../contexts/SocketContext";
+import { useGameStore } from "../store/gameStore";
+import { detectPlatform } from "../utils/platform";
+import { storage } from "../utils/storage";
 
 const JoinGameScreen = () => {
   const navigate = useNavigate();
   const { socket } = useSocket();
-  const { setCurrentRoom, setLoading, setError } = useGameStore();
-  
-  const [playerName, setPlayerName] = useState(storage.getPlayerName() || '');
-  const [roomCode, setRoomCode] = useState('');
+  const { setCurrentRoom, setCurrentPlayer, setLoading, setError } =
+    useGameStore();
+
+  const [playerName, setPlayerName] = useState(storage.getPlayerName() || "");
+  const [roomCode, setRoomCode] = useState("");
 
   const handleJoin = () => {
     if (!socket || !playerName.trim() || !roomCode.trim()) {
-      setError('Please enter your name and room code');
+      setError("Please enter your name and room code");
       return;
     }
 
     setLoading(true);
     storage.setPlayerName(playerName);
 
-    socket.emit('room:join', roomCode.toUpperCase(), playerName, detectPlatform(), (response) => {
-      setLoading(false);
-      
-      if (response.success && response.room) {
-        setCurrentRoom(response.room);
-        navigate(`/lobby/${response.room.code}`);
-      } else {
-        setError(response.error || 'Failed to join room');
+    socket.emit(
+      "room:join",
+      roomCode.toUpperCase(),
+      playerName,
+      detectPlatform(),
+      (response) => {
+        setLoading(false);
+
+        if (response.success && response.room && response.playerId) {
+          setCurrentRoom(response.room);
+          // Find and set the current player
+          const player = response.room.players.find(
+            (p: any) => p.id === response.playerId
+          );
+          if (player) {
+            setCurrentPlayer(player);
+          }
+          navigate(`/lobby/${response.room.code}`);
+        } else {
+          setError(response.error || "Failed to join room");
+        }
       }
-    });
+    );
   };
 
   return (
@@ -43,7 +57,7 @@ const JoinGameScreen = () => {
         className="bg-slate-800/50 backdrop-blur-lg rounded-3xl p-8 max-w-md w-full shadow-2xl"
       >
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate("/")}
           className="mb-6 text-gray-400 hover:text-white transition-colors"
         >
           ← Back
@@ -55,7 +69,9 @@ const JoinGameScreen = () => {
 
         {/* Player Name */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Your Name</label>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Your Name
+          </label>
           <input
             type="text"
             value={playerName}
@@ -68,7 +84,9 @@ const JoinGameScreen = () => {
 
         {/* Room Code */}
         <div className="mb-8">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Room Code</label>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Room Code
+          </label>
           <input
             type="text"
             value={roomCode}
@@ -102,4 +120,3 @@ const JoinGameScreen = () => {
 };
 
 export default JoinGameScreen;
-

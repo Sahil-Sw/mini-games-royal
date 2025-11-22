@@ -1,19 +1,25 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useSocket } from '../contexts/SocketContext';
-import { useGameStore } from '../store/gameStore';
-import { GAME_CONSTANTS, MINIGAME_CONFIGS, type GameMode, type MiniGameType } from '@shared/index';
-import { detectPlatform } from '../utils/platform';
-import { storage } from '../utils/storage';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useSocket } from "../contexts/SocketContext";
+import { useGameStore } from "../store/gameStore";
+import {
+  GAME_CONSTANTS,
+  MINIGAME_CONFIGS,
+  type GameMode,
+  type MiniGameType,
+} from "@shared/index";
+import { detectPlatform } from "../utils/platform";
+import { storage } from "../utils/storage";
 
 const CreateGameScreen = () => {
   const navigate = useNavigate();
   const { socket } = useSocket();
-  const { setCurrentRoom, setLoading, setError } = useGameStore();
-  
-  const [playerName, setPlayerName] = useState(storage.getPlayerName() || '');
-  const [mode, setMode] = useState<GameMode>('team');
+  const { setCurrentRoom, setCurrentPlayer, setLoading, setError } =
+    useGameStore();
+
+  const [playerName, setPlayerName] = useState(storage.getPlayerName() || "");
+  const [mode, setMode] = useState<GameMode>("team");
   const [numberOfTeams, setNumberOfTeams] = useState(2);
   const [numberOfRounds, setNumberOfRounds] = useState(10);
   const [selectedMinigames, setSelectedMinigames] = useState<MiniGameType[]>(
@@ -22,36 +28,48 @@ const CreateGameScreen = () => {
 
   const handleCreate = () => {
     if (!socket || !playerName.trim()) {
-      setError('Please enter your name');
+      setError("Please enter your name");
       return;
     }
 
     setLoading(true);
     storage.setPlayerName(playerName);
 
-    socket.emit('room:create', {
-      mode,
-      maxPlayers: GAME_CONSTANTS.MAX_PLAYERS,
-      numberOfTeams: mode === 'team' ? numberOfTeams : 0,
-      numberOfRounds,
-      enabledMinigames: selectedMinigames,
-      roundDuration: 30,
-    }, playerName, (response) => {
-      setLoading(false);
-      
-      if (response.success && response.room) {
-        setCurrentRoom(response.room);
-        navigate(`/lobby/${response.room.code}`);
-      } else {
-        setError(response.error || 'Failed to create room');
+    socket.emit(
+      "room:create",
+      {
+        mode,
+        maxPlayers: GAME_CONSTANTS.MAX_PLAYERS,
+        numberOfTeams: mode === "team" ? numberOfTeams : 0,
+        numberOfRounds,
+        enabledMinigames: selectedMinigames,
+        roundDuration: 30,
+      },
+      playerName,
+      (response) => {
+        setLoading(false);
+
+        if (response.success && response.room && response.playerId) {
+          setCurrentRoom(response.room);
+          // Find and set the current player
+          const player = response.room.players.find(
+            (p: any) => p.id === response.playerId
+          );
+          if (player) {
+            setCurrentPlayer(player);
+          }
+          navigate(`/lobby/${response.room.code}`);
+        } else {
+          setError(response.error || "Failed to create room");
+        }
       }
-    });
+    );
   };
 
   const toggleMinigame = (gameId: MiniGameType) => {
-    setSelectedMinigames(prev =>
+    setSelectedMinigames((prev) =>
       prev.includes(gameId)
-        ? prev.filter(id => id !== gameId)
+        ? prev.filter((id) => id !== gameId)
         : [...prev, gameId]
     );
   };
@@ -64,7 +82,7 @@ const CreateGameScreen = () => {
         className="bg-slate-800/50 backdrop-blur-lg rounded-3xl p-8 max-w-2xl w-full shadow-2xl"
       >
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate("/")}
           className="mb-6 text-gray-400 hover:text-white transition-colors"
         >
           ← Back
@@ -76,7 +94,9 @@ const CreateGameScreen = () => {
 
         {/* Player Name */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Your Name</label>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Your Name
+          </label>
           <input
             type="text"
             value={playerName}
@@ -89,26 +109,32 @@ const CreateGameScreen = () => {
 
         {/* Game Mode */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Game Mode</label>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Game Mode
+          </label>
           <div className="grid grid-cols-3 gap-3">
-            {(['team', 'ffa', 'single'] as GameMode[]).map((m) => (
+            {(["team", "ffa", "single"] as GameMode[]).map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
                 className={`py-3 rounded-lg font-medium transition-all ${
                   mode === m
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+                    ? "bg-purple-500 text-white"
+                    : "bg-slate-700 text-gray-300 hover:bg-slate-600"
                 }`}
               >
-                {m === 'team' ? 'Team Battle' : m === 'ffa' ? 'Free-For-All' : 'Single Player'}
+                {m === "team"
+                  ? "Team Battle"
+                  : m === "ffa"
+                  ? "Free-For-All"
+                  : "Single Player"}
               </button>
             ))}
           </div>
         </div>
 
         {/* Number of Teams (only for team mode) */}
-        {mode === 'team' && (
+        {mode === "team" && (
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Number of Teams: {numberOfTeams}
@@ -151,8 +177,8 @@ const CreateGameScreen = () => {
                 onClick={() => toggleMinigame(game.id)}
                 className={`p-3 rounded-lg text-left transition-all ${
                   selectedMinigames.includes(game.id)
-                    ? 'bg-purple-500/30 border-2 border-purple-500'
-                    : 'bg-slate-700 border-2 border-transparent hover:border-slate-600'
+                    ? "bg-purple-500/30 border-2 border-purple-500"
+                    : "bg-slate-700 border-2 border-transparent hover:border-slate-600"
                 }`}
               >
                 <div className="font-medium text-white">{game.name}</div>
@@ -178,4 +204,3 @@ const CreateGameScreen = () => {
 };
 
 export default CreateGameScreen;
-

@@ -46,7 +46,7 @@ export function setupSocketHandlers(io: ServerType) {
         // Join socket room
         socket.join(room.id);
 
-        callback({ success: true, room });
+        callback({ success: true, room, playerId });
       } catch (error: any) {
         console.error('Error creating room:', error);
         callback({ success: false, error: error.message });
@@ -98,7 +98,7 @@ export function setupSocketHandlers(io: ServerType) {
         io.to(updatedRoom.id).emit('room:updated', updatedRoom);
         io.to(updatedRoom.id).emit('room:playerJoined', player);
 
-        callback({ success: true, room: updatedRoom });
+        callback({ success: true, room: updatedRoom, playerId });
       } catch (error: any) {
         console.error('Error joining room:', error);
         callback({ success: false, error: error.message });
