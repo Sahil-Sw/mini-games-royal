@@ -2,7 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { nanoid } from 'nanoid';
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from '@shared/types/socket';
 import type { Player } from '@shared/index';
-import { AVATARS, GAME_CONSTANTS } from '@shared/index';
+import { AVATARS, GAME_CONSTANTS, MINIGAME_CONFIGS } from '@shared/index';
 import { RoomManager } from '../game/RoomManager.js';
 import { GameEngine } from '../game/GameEngine.js';
 
@@ -190,10 +190,11 @@ function startRound(io: ServerType, room: any) {
   room.rounds.push(round);
   room.state = 'playing';
 
-  // TODO: Generate minigame-specific data
+  // Get minigame config
+  const config = MINIGAME_CONFIGS[round.minigame];
   const minigameData = {
     gameType: round.minigame,
-    config: {},
+    config: config,
   };
 
   io.to(room.id).emit('game:roundStart', round, minigameData);
