@@ -1,8 +1,8 @@
 {
-  "buildCommand": "npm install && npm run build:shared && npm run build:client",
-  "outputDirectory": "client/dist",
+  "buildCommand": "cd .. && npm run build:shared && npm run build:client",
+  "outputDirectory": "dist",
   "framework": null,
-  "installCommand": "npm install --workspaces",
+  "installCommand": "cd .. && npm install --workspaces",
   "rewrites": [
     {
       "source": "/(.*)",
