@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
@@ -36,12 +36,12 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents, {}, SocketData
 setupSocketHandlers(io);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Get active rooms
-app.get('/api/rooms', (req, res) => {
+app.get('/api/rooms', (req: Request, res: Response) => {
   // TODO: Return list of active rooms
   res.json({ rooms: [] });
 });
