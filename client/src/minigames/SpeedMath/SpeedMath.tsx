@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useSocket } from '../../contexts/SocketContext';
-import type { SpeedMathQuestion } from '@shared/index';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useSocket } from "../../contexts/SocketContext";
+import type { SpeedMathQuestion } from "@shared/index";
 
 interface SpeedMathProps {
   duration: number;
@@ -11,16 +11,16 @@ interface SpeedMathProps {
 const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
   const { socket } = useSocket();
   const [question, setQuestion] = useState<SpeedMathQuestion | null>(null);
-  const [answer, setAnswer] = useState('');
+  const [answer, setAnswer] = useState("");
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
   useEffect(() => {
     generateQuestion();
-    
+
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
           onComplete(score, duration - prev);
@@ -34,23 +34,23 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
   }, []);
 
   const generateQuestion = () => {
-    const operators = ['+', '-', '*'];
+    const operators = ["+", "-", "*"];
     const operator = operators[Math.floor(Math.random() * operators.length)];
-    
+
     let num1: number, num2: number, correctAnswer: number;
-    
+
     switch (operator) {
-      case '+':
+      case "+":
         num1 = Math.floor(Math.random() * 50) + 1;
         num2 = Math.floor(Math.random() * 50) + 1;
         correctAnswer = num1 + num2;
         break;
-      case '-':
+      case "-":
         num1 = Math.floor(Math.random() * 50) + 20;
         num2 = Math.floor(Math.random() * num1);
         correctAnswer = num1 - num2;
         break;
-      case '*':
+      case "*":
         num1 = Math.floor(Math.random() * 12) + 1;
         num2 = Math.floor(Math.random() * 12) + 1;
         correctAnswer = num1 * num2;
@@ -66,29 +66,29 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
       answer: correctAnswer,
       operators: [operator],
     });
-    setAnswer('');
+    setAnswer("");
     setIsCorrect(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!question || !answer) return;
 
     const userAnswer = parseInt(answer);
     const correct = userAnswer === question.answer;
-    
+
     setIsCorrect(correct);
-    
+
     if (correct) {
-      setScore(prev => prev + 1);
+      setScore((prev) => prev + 1);
       setTimeout(() => {
         generateQuestion();
       }, 500);
     } else {
       setTimeout(() => {
         setIsCorrect(null);
-        setAnswer('');
+        setAnswer("");
       }, 1000);
     }
   };
@@ -97,16 +97,12 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-blue-900 to-purple-900">
       {/* Timer */}
       <div className="absolute top-8 right-8">
-        <div className="text-6xl font-bold text-white">
-          {timeLeft}
-        </div>
+        <div className="text-6xl font-bold text-white">{timeLeft}</div>
       </div>
 
       {/* Score */}
       <div className="absolute top-8 left-8">
-        <div className="text-4xl font-bold text-yellow-400">
-          Score: {score}
-        </div>
+        <div className="text-4xl font-bold text-yellow-400">Score: {score}</div>
       </div>
 
       {/* Question */}
@@ -123,7 +119,7 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
       </motion.div>
 
       {/* Answer Input */}
-      <form onSubmit={handleSubmit} className="w-full max-w-md">
+      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
         <input
           type="number"
           value={answer}
@@ -132,13 +128,18 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
           autoFocus
           className={`w-full px-8 py-6 text-4xl text-center font-bold rounded-2xl focus:outline-none focus:ring-4 transition-all ${
             isCorrect === true
-              ? 'bg-green-500 text-white ring-green-400'
+              ? "bg-green-500 text-white ring-green-400"
               : isCorrect === false
-              ? 'bg-red-500 text-white ring-red-400'
-              : 'bg-white text-gray-900 ring-purple-500'
+              ? "bg-red-500 text-white ring-red-400"
+              : "bg-white text-gray-900 ring-purple-500"
           }`}
         />
-        <button type="submit" className="hidden">Submit</button>
+        <button
+          type="submit"
+          className="w-full px-8 py-4 text-2xl font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-2xl transition-all active:scale-95"
+        >
+          Submit Answer
+        </button>
       </form>
 
       {/* Feedback */}
@@ -147,10 +148,10 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           className={`mt-8 text-4xl font-bold ${
-            isCorrect ? 'text-green-400' : 'text-red-400'
+            isCorrect ? "text-green-400" : "text-red-400"
           }`}
         >
-          {isCorrect ? '✓ Correct!' : '✗ Wrong!'}
+          {isCorrect ? "✓ Correct!" : "✗ Wrong!"}
         </motion.div>
       )}
     </div>
@@ -158,4 +159,3 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
 };
 
 export default SpeedMath;
-

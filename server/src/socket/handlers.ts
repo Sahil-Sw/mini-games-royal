@@ -146,11 +146,38 @@ export function setupSocketHandlers(io: ServerType) {
       try {
         await gameEngine.startGame(room);
         io.to(roomId).emit('game:stateChanged', 'countdown');
-        
+
         // Start countdown
         startCountdown(io, room);
       } catch (error: any) {
         socket.emit('error', error.message);
+      }
+    });
+
+    // Minigame submit
+    socket.on('minigame:submit', (data) => {
+      const { roomId } = socket.data;
+      if (!roomId) return;
+
+      const room = roomManager.getRoomById(roomId);
+      if (!room || room.state !== 'playing') return;
+
+      const currentRound = room.rounds[room.rounds.length - 1];
+      if (!currentRound) return;
+
+      // Add result to round
+      const result = {
+        playerId: data.playerId,
+        score: data.answer.score,
+        time: data.answer.time,
+      };
+      currentRound.results.push(result);
+
+      console.log(`📊 Player ${data.playerId} submitted score: ${result.score}`);
+
+      // Check if all players have submitted
+      if (currentRound.results.length === room.players.length) {
+        endRound(io, room, currentRound);
       }
     });
 
@@ -196,6 +223,58 @@ function startRound(io: ServerType, room: any) {
     config: config,
   };
 
+  console.log(`🎮 Starting round ${room.currentRound} - ${round.minigame}`);
   io.to(room.id).emit('game:roundStart', round, minigameData);
+
+  // Auto-end round after duration + buffer
+  setTimeout(() => {
+    if (room.state === 'playing') {
+      const currentRound = room.rounds[room.rounds.length - 1];
+      if (currentRound && currentRound.results.length < room.players.length) {
+        console.log(`⏰ Round ${room.currentRound} timed out, ending with ${currentRound.results.length}/${room.players.length} results`);
+        endRound(io, room, currentRound);
+      }
+    }
+  }, (config.duration + 2) * 1000);
+}
+
+function endRound(io: ServerType, room: any, round: any) {
+  room.state = 'roundResult';
+  round.endTime = new Date();
+
+  // Determine winner
+  const { winnerId, winnerTeamId } = gameEngine.determineWinner(round.results, room);
+  round.winnerId = winnerId;
+  round.winnerTeamId = winnerTeamId;
+
+  // Update scores
+  gameEngine.updateScores(room, winnerId, winnerTeamId);
+
+  console.log(`🏆 Round ${room.currentRound} winner: ${winnerId}`);
+
+  // Emit round end
+  io.to(room.id).emit('game:roundEnd', round.results, winnerId, winnerTeamId);
+  io.to(room.id).emit('room:updated', room);
+
+  // Check if game is finished
+  if (gameEngine.isGameFinished(room)) {
+    setTimeout(() => {
+      finishGame(io, room);
+    }, 5000);
+  } else {
+    // Start next round after delay
+    setTimeout(() => {
+      startCountdown(io, room);
+    }, 5000);
+  }
+}
+
+function finishGame(io: ServerType, room: any) {
+  room.state = 'finished';
+  const finalResults = gameEngine.getFinalResults(room);
+
+  console.log(`🎉 Game finished in room ${room.code}`);
+  io.to(room.id).emit('game:finished', finalResults);
+  io.to(room.id).emit('room:updated', room);
 }
 
