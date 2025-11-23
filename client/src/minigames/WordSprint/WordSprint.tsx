@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { useBroadcastGameState } from "../../hooks/useBroadcastGameState";
 
 interface WordSprintProps {
   duration: number;
   onComplete: (score: number, time: number) => void;
+  isActive?: boolean;
+  spectateState?: any;
 }
 
 const WORDS = [
@@ -29,13 +32,37 @@ const WORDS = [
   "WINNER",
 ];
 
-const WordSprint: React.FC<WordSprintProps> = ({ duration, onComplete }) => {
+const WordSprint: React.FC<WordSprintProps> = ({
+  duration,
+  onComplete,
+  isActive = true,
+  spectateState,
+}) => {
   const [currentWord, setCurrentWord] = useState("");
   const [input, setInput] = useState("");
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(duration);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const scoreRef = useRef(0);
+
+  // If spectating, use the spectate state
+  const displayCurrentWord = spectateState?.currentWord || currentWord;
+  const displayInput = spectateState?.input || input;
+  const displayScore = spectateState?.score ?? score;
+  const displayTimeLeft = spectateState?.timeLeft ?? timeLeft;
+  const displayFeedback = spectateState?.feedback ?? feedback;
+
+  // Broadcast game state to spectators
+  useBroadcastGameState(
+    {
+      currentWord,
+      input,
+      score,
+      timeLeft,
+      feedback,
+    },
+    isActive
+  );
 
   useEffect(() => {
     generateWord();
@@ -81,12 +108,12 @@ const WordSprint: React.FC<WordSprintProps> = ({ duration, onComplete }) => {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-pink-900 to-purple-900">
       {/* Timer */}
       <div className="absolute top-8 right-8 text-4xl font-bold text-white">
-        {timeLeft}s
+        {displayTimeLeft}s
       </div>
 
       {/* Score */}
       <div className="absolute top-8 left-8 text-4xl font-bold text-yellow-400">
-        Words: {score}
+        Words: {displayScore}
       </div>
 
       {/* Instructions */}
@@ -96,22 +123,23 @@ const WordSprint: React.FC<WordSprintProps> = ({ duration, onComplete }) => {
 
       {/* Word to type */}
       <motion.div
-        key={currentWord}
+        key={displayCurrentWord}
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         className="text-7xl font-bold text-white mb-12 tracking-wider"
       >
-        {currentWord}
+        {displayCurrentWord}
       </motion.div>
 
       {/* Input */}
       <input
         type="text"
-        value={input}
-        onChange={(e) => handleInputChange(e.target.value)}
-        autoFocus
+        value={displayInput}
+        onChange={(e) => isActive && handleInputChange(e.target.value)}
+        autoFocus={isActive}
+        disabled={!isActive}
         className={`w-full max-w-2xl px-8 py-6 text-4xl text-center font-bold rounded-2xl focus:outline-none focus:ring-4 transition-all ${
-          feedback === "correct"
+          displayFeedback === "correct"
             ? "bg-green-500 text-white ring-green-400"
             : "bg-white text-gray-900 ring-purple-500"
         }`}
@@ -120,13 +148,13 @@ const WordSprint: React.FC<WordSprintProps> = ({ duration, onComplete }) => {
 
       {/* Visual feedback for matching letters */}
       <div className="mt-8 text-3xl font-mono">
-        {currentWord.split("").map((char, idx) => (
+        {displayCurrentWord.split("").map((char: string, idx: number) => (
           <span
             key={idx}
             className={
-              input[idx] === char
+              displayInput[idx] === char
                 ? "text-green-400"
-                : input[idx]
+                : displayInput[idx]
                 ? "text-red-400"
                 : "text-gray-500"
             }

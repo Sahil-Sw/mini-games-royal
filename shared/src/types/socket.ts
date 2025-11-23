@@ -22,6 +22,7 @@ export interface ClientToServerEvents {
   
   // Minigame
   'minigame:submit': (data: MiniGameSubmitEvent) => void;
+  'minigame:stateUpdate': (state: any) => void; // Active player broadcasts their game state
   
   // Chat (future)
   'chat:message': (message: string) => void;
@@ -44,6 +45,7 @@ export interface ServerToClientEvents {
   
   // Minigame events
   'minigame:update': (data: any) => void;
+  'minigame:spectateState': (playerId: string, state: any) => void; // Spectators receive active player's state
   
   // Player updates
   'player:updated': (player: Player) => void;

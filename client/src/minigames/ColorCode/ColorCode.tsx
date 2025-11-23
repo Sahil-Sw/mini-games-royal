@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { useBroadcastGameState } from "../../hooks/useBroadcastGameState";
 
 interface ColorCodeProps {
   duration: number;
   onComplete: (score: number, time: number) => void;
+  isActive?: boolean;
+  spectateState?: any;
 }
 
 const COLORS = [
@@ -13,13 +16,38 @@ const COLORS = [
   { name: "YELLOW", color: "#F59E0B", emoji: "🟡" },
 ];
 
-const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
+const ColorCode: React.FC<ColorCodeProps> = ({
+  duration,
+  onComplete,
+  isActive = true,
+  spectateState,
+}) => {
   const [code, setCode] = useState<typeof COLORS>([]);
   const [userCode, setUserCode] = useState<typeof COLORS>([]);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(duration);
   const [hints, setHints] = useState<string[]>([]);
   const scoreRef = useRef(0);
+
+  // If spectating, use the spectate state
+  const displayUserCode =
+    spectateState?.userCode || userCode.map((c) => c.emoji);
+  const displayScore = spectateState?.score ?? score;
+  const displayTimeLeft = spectateState?.timeLeft ?? timeLeft;
+  const displayHints = spectateState?.hints || hints;
+  const displayCodeLength = spectateState?.codeLength ?? code.length;
+
+  // Broadcast game state to spectators
+  useBroadcastGameState(
+    {
+      userCode: userCode.map((c) => c.emoji),
+      score,
+      timeLeft,
+      hints,
+      codeLength: code.length,
+    },
+    isActive
+  );
 
   useEffect(() => {
     generateCode();
@@ -102,12 +130,12 @@ const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-indigo-900">
       {/* Timer */}
       <div className="absolute top-8 right-8 text-4xl font-bold text-white">
-        {timeLeft}s
+        {displayTimeLeft}s
       </div>
 
       {/* Score */}
       <div className="absolute top-8 left-8 text-4xl font-bold text-yellow-400">
-        Codes: {score}
+        Codes: {displayScore}
       </div>
 
       {/* Instructions */}
@@ -118,7 +146,7 @@ const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
       {/* Hints */}
       <div className="bg-slate-800/50 rounded-2xl p-6 mb-8 max-w-md">
         <h3 className="text-xl font-bold text-white mb-3">Hints:</h3>
-        {hints.map((hint, idx) => (
+        {displayHints.map((hint: string, idx: number) => (
           <div key={idx} className="text-gray-300 mb-2">
             💡 {hint}
           </div>
@@ -127,43 +155,51 @@ const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
 
       {/* User Code Display */}
       <div className="flex gap-4 mb-8 min-h-[80px] items-center">
-        {Array.from({ length: code.length }).map((_, idx) => (
-          <div
-            key={idx}
-            className={`w-20 h-20 rounded-xl flex items-center justify-center text-4xl transition-all ${
-              userCode[idx]
-                ? isCorrect
-                  ? "bg-green-500"
-                  : isWrong
-                  ? "bg-red-500"
-                  : "bg-slate-700"
-                : "bg-slate-800 border-2 border-dashed border-slate-600"
-            }`}
-          >
-            {userCode[idx]?.emoji || "?"}
-          </div>
-        ))}
+        {Array.from({ length: displayCodeLength }).map((_, idx) => {
+          const displayEmoji =
+            typeof displayUserCode[idx] === "string"
+              ? displayUserCode[idx]
+              : userCode[idx]?.emoji;
+          return (
+            <div
+              key={idx}
+              className={`w-20 h-20 rounded-xl flex items-center justify-center text-4xl transition-all ${
+                displayEmoji
+                  ? isCorrect
+                    ? "bg-green-500"
+                    : isWrong
+                    ? "bg-red-500"
+                    : "bg-slate-700"
+                  : "bg-slate-800 border-2 border-dashed border-slate-600"
+              }`}
+            >
+              {displayEmoji || "?"}
+            </div>
+          );
+        })}
       </div>
 
       {/* Color Buttons */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {COLORS.map((color) => (
-          <motion.button
-            key={color.name}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => handleColorClick(color)}
-            disabled={userCode.length >= code.length}
-            className="w-24 h-24 rounded-2xl text-5xl flex items-center justify-center transition-all disabled:opacity-50"
-            style={{ backgroundColor: color.color }}
-          >
-            {color.emoji}
-          </motion.button>
-        ))}
-      </div>
+      {isActive && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {COLORS.map((color) => (
+            <motion.button
+              key={color.name}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleColorClick(color)}
+              disabled={userCode.length >= code.length}
+              className="w-24 h-24 rounded-2xl text-5xl flex items-center justify-center transition-all disabled:opacity-50"
+              style={{ backgroundColor: color.color }}
+            >
+              {color.emoji}
+            </motion.button>
+          ))}
+        </div>
+      )}
 
       {/* Reset Button */}
-      {userCode.length > 0 && !isCorrect && (
+      {isActive && userCode.length > 0 && !isCorrect && (
         <button
           onClick={handleReset}
           className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all"

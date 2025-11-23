@@ -29,6 +29,7 @@ const GameScreen = () => {
   const [spectatingPlayerId, setSpectatingPlayerId] = useState<string | null>(
     null
   );
+  const [spectateState, setSpectateState] = useState<any>(null); // Real-time state from active player
 
   useEffect(() => {
     if (!socket || !currentRoom) {
@@ -45,6 +46,14 @@ const GameScreen = () => {
       setRoundResults(null);
       setCurrentRound(round);
       setMinigameData(data);
+      setSpectateState(null); // Reset spectate state for new round
+    });
+
+    socket.on("minigame:spectateState", (playerId, state) => {
+      // Only update if we're spectating this player
+      if (spectatingPlayerId === playerId || !spectatingPlayerId) {
+        setSpectateState(state);
+      }
     });
 
     socket.on("game:roundEnd", (results, winnerId, winnerTeamId) => {
@@ -68,6 +77,7 @@ const GameScreen = () => {
       socket.off("game:roundEnd");
       socket.off("game:finished");
       socket.off("room:updated");
+      socket.off("minigame:spectateState");
     };
   }, [socket, currentRoom, navigate]);
 
@@ -637,6 +647,8 @@ const GameScreen = () => {
                 <MiniGameComponent
                   duration={minigameData.config.duration}
                   onComplete={() => {}} // No-op for spectators
+                  isActive={false} // Not actively playing
+                  spectateState={spectateState} // Pass real-time state from active player
                 />
               </div>
 
@@ -661,6 +673,7 @@ const GameScreen = () => {
         <MiniGameComponent
           duration={minigameData.config.duration}
           onComplete={handleComplete}
+          isActive={true} // Actively playing
         />
       </div>
     );

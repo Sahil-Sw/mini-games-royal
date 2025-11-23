@@ -1,14 +1,22 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useBroadcastGameState } from "../../hooks/useBroadcastGameState";
 
 interface MemoryFlashProps {
   duration: number;
   onComplete: (score: number, time: number) => void;
+  isActive?: boolean;
+  spectateState?: any;
 }
 
 const COLORS = ["🔴", "🔵", "🟢", "🟡", "🟣", "🟠"];
 
-const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
+const MemoryFlash: React.FC<MemoryFlashProps> = ({
+  duration,
+  onComplete,
+  isActive = true,
+  spectateState,
+}) => {
   const [sequence, setSequence] = useState<string[]>([]);
   const [userSequence, setUserSequence] = useState<string[]>([]);
   const [isShowing, setIsShowing] = useState(true);
@@ -17,6 +25,30 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const [round, setRound] = useState(1);
   const scoreRef = useRef(0);
+
+  // If spectating, use the spectate state
+  const displaySequence =
+    spectateState?.sequence || (isShowing ? sequence : []);
+  const displayUserSequence = spectateState?.userSequence || userSequence;
+  const displayIsShowing = spectateState?.isShowing ?? isShowing;
+  const displayScore = spectateState?.score ?? score;
+  const displayTimeLeft = spectateState?.timeLeft ?? timeLeft;
+  const displayFeedback = spectateState?.feedback ?? feedback;
+  const displayRound = spectateState?.round ?? round;
+
+  // Broadcast game state to spectators
+  useBroadcastGameState(
+    {
+      sequence: isShowing ? sequence : [], // Only show sequence when it's being shown
+      userSequence,
+      isShowing,
+      score,
+      timeLeft,
+      feedback,
+      round,
+    },
+    isActive
+  );
 
   useEffect(() => {
     generateSequence(3); // Start with 3 items
@@ -90,25 +122,27 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-indigo-900 to-purple-900">
       {/* Timer */}
       <div className="absolute top-8 right-8 text-4xl font-bold text-white">
-        {timeLeft}s
+        {displayTimeLeft}s
       </div>
 
       {/* Score */}
       <div className="absolute top-8 left-8">
-        <div className="text-4xl font-bold text-yellow-400">Score: {score}</div>
-        <div className="text-xl text-gray-300">Round: {round}</div>
+        <div className="text-4xl font-bold text-yellow-400">
+          Score: {displayScore}
+        </div>
+        <div className="text-xl text-gray-300">Round: {displayRound}</div>
       </div>
 
       {/* Instructions */}
       <div className="text-2xl text-gray-300 mb-8 text-center">
-        {isShowing ? "Memorize the sequence!" : "Repeat the sequence!"}
+        {displayIsShowing ? "Memorize the sequence!" : "Repeat the sequence!"}
       </div>
 
       {/* Sequence Display */}
       <div className="mb-12 min-h-[100px] flex items-center justify-center gap-4">
         <AnimatePresence>
-          {isShowing &&
-            sequence.map((color, idx) => (
+          {displayIsShowing &&
+            displaySequence.map((color: string, idx: number) => (
               <motion.div
                 key={idx}
                 initial={{ scale: 0, opacity: 0 }}
@@ -124,9 +158,9 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
       </div>
 
       {/* User Input Display */}
-      {!isShowing && (
+      {!displayIsShowing && (
         <div className="mb-8 min-h-[80px] flex items-center gap-3">
-          {userSequence.map((color, idx) => (
+          {displayUserSequence.map((color: string, idx: number) => (
             <motion.div
               key={idx}
               initial={{ scale: 0 }}
@@ -140,7 +174,7 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
       )}
 
       {/* Color Buttons */}
-      {!isShowing && (
+      {!displayIsShowing && isActive && (
         <div className="grid grid-cols-3 gap-4">
           {COLORS.map((color) => (
             <motion.button
@@ -158,16 +192,16 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
 
       {/* Feedback */}
       <AnimatePresence>
-        {feedback && (
+        {displayFeedback && (
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             className={`absolute bottom-20 text-5xl font-bold ${
-              feedback === "correct" ? "text-green-400" : "text-red-400"
+              displayFeedback === "correct" ? "text-green-400" : "text-red-400"
             }`}
           >
-            {feedback === "correct" ? "✓ Correct!" : "✗ Wrong!"}
+            {displayFeedback === "correct" ? "✓ Correct!" : "✗ Wrong!"}
           </motion.div>
         )}
       </AnimatePresence>

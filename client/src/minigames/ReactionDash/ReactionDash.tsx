@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { useBroadcastGameState } from "../../hooks/useBroadcastGameState";
 
 interface ReactionDashProps {
   duration: number;
   onComplete: (score: number, time: number) => void;
+  isActive?: boolean;
+  spectateState?: any;
 }
 
 const ReactionDash: React.FC<ReactionDashProps> = ({
   duration,
   onComplete,
+  isActive = true,
+  spectateState,
 }) => {
   const [color, setColor] = useState("red");
   const [targetColor] = useState("green");
@@ -19,6 +24,23 @@ const ReactionDash: React.FC<ReactionDashProps> = ({
   const changeTimeRef = useRef<number>(0);
   const startTimeRef = useRef<number>(Date.now());
   const scoreRef = useRef(0);
+
+  // If spectating, use the spectate state
+  const displayColor = spectateState?.color || color;
+  const displayScore = spectateState?.score ?? score;
+  const displayTimeLeft = spectateState?.timeLeft ?? timeLeft;
+  const displayMessage = spectateState?.message || message;
+
+  // Broadcast game state to spectators
+  useBroadcastGameState(
+    {
+      color,
+      score,
+      timeLeft,
+      message,
+    },
+    isActive
+  );
 
   useEffect(() => {
     startTimeRef.current = Date.now();
@@ -77,35 +99,36 @@ const ReactionDash: React.FC<ReactionDashProps> = ({
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       {/* Timer */}
       <div className="absolute top-8 right-8 text-4xl font-bold text-white">
-        {timeLeft}s
+        {displayTimeLeft}s
       </div>
 
       {/* Score */}
       <div className="absolute top-8 left-8 text-4xl font-bold text-yellow-400">
-        Taps: {score}
+        Taps: {displayScore}
       </div>
 
       {/* Message */}
       <motion.div
-        key={message}
+        key={displayMessage}
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         className="text-3xl font-bold text-white mb-12 text-center"
       >
-        {message}
+        {displayMessage}
       </motion.div>
 
       {/* Click Area */}
       <motion.button
         whileTap={{ scale: 0.95 }}
-        onClick={handleClick}
+        onClick={isActive ? handleClick : undefined}
+        disabled={!isActive}
         className={`w-80 h-80 rounded-full text-6xl font-bold transition-all duration-300 ${
-          color === "green"
+          displayColor === "green"
             ? "bg-green-500 text-white shadow-2xl shadow-green-500/50"
             : "bg-red-500 text-white"
         }`}
       >
-        {color === "green" ? "🟢" : "🔴"}
+        {displayColor === "green" ? "🟢" : "🔴"}
       </motion.button>
     </div>
   );

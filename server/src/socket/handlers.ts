@@ -229,6 +229,15 @@ export function setupSocketHandlers(io: ServerType) {
       }
     });
 
+    // Minigame state update (for spectating)
+    socket.on('minigame:stateUpdate', (state) => {
+      const { playerId, roomId } = socket.data;
+      if (!playerId || !roomId) return;
+
+      // Broadcast this player's game state to all other players in the room (spectators)
+      socket.to(roomId).emit('minigame:spectateState', playerId, state);
+    });
+
     // Disconnect
     socket.on('disconnect', () => {
       console.log(`🔌 Client disconnected: ${socket.id}`);

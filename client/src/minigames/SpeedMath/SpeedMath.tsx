@@ -1,14 +1,22 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useSocket } from "../../contexts/SocketContext";
+import { useBroadcastGameState } from "../../hooks/useBroadcastGameState";
 import type { SpeedMathQuestion } from "@shared/index";
 
 interface SpeedMathProps {
   duration: number;
   onComplete: (score: number, time: number) => void;
+  isActive?: boolean; // Whether this player is actively playing (for spectating)
+  spectateState?: any; // Real-time state from the active player (for spectators)
 }
 
-const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
+const SpeedMath: React.FC<SpeedMathProps> = ({
+  duration,
+  onComplete,
+  isActive = true,
+  spectateState,
+}) => {
   const { socket } = useSocket();
   const [question, setQuestion] = useState<SpeedMathQuestion | null>(null);
   const [answer, setAnswer] = useState("");
@@ -16,6 +24,25 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const scoreRef = useRef(0);
+
+  // If spectating, use the spectate state instead of local state
+  const displayQuestion = spectateState?.question || question?.question;
+  const displayAnswer = spectateState?.answer || answer;
+  const displayScore = spectateState?.score ?? score;
+  const displayTimeLeft = spectateState?.timeLeft ?? timeLeft;
+  const displayIsCorrect = spectateState?.isCorrect ?? isCorrect;
+
+  // Broadcast game state to spectators
+  useBroadcastGameState(
+    {
+      question: question?.question,
+      answer,
+      score,
+      timeLeft,
+      isCorrect,
+    },
+    isActive
+  );
 
   useEffect(() => {
     generateQuestion();
@@ -102,24 +129,26 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-blue-900 to-purple-900">
       {/* Timer */}
       <div className="absolute top-8 right-8">
-        <div className="text-6xl font-bold text-white">{timeLeft}</div>
+        <div className="text-6xl font-bold text-white">{displayTimeLeft}</div>
       </div>
 
       {/* Score */}
       <div className="absolute top-8 left-8">
-        <div className="text-4xl font-bold text-yellow-400">Score: {score}</div>
+        <div className="text-4xl font-bold text-yellow-400">
+          Score: {displayScore}
+        </div>
       </div>
 
       {/* Question */}
       <motion.div
-        key={question?.question}
+        key={displayQuestion}
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         className="text-center mb-12"
       >
         <h2 className="text-2xl text-gray-300 mb-4">Solve this:</h2>
         <div className="text-8xl font-bold text-white mb-8">
-          {question?.question}
+          {displayQuestion}
         </div>
       </motion.div>
 
@@ -127,36 +156,39 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
       <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
         <input
           type="number"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
+          value={displayAnswer}
+          onChange={(e) => isActive && setAnswer(e.target.value)}
           placeholder="Your answer"
-          autoFocus
+          autoFocus={isActive}
+          disabled={!isActive}
           className={`w-full px-8 py-6 text-4xl text-center font-bold rounded-2xl focus:outline-none focus:ring-4 transition-all ${
-            isCorrect === true
+            displayIsCorrect === true
               ? "bg-green-500 text-white ring-green-400"
-              : isCorrect === false
+              : displayIsCorrect === false
               ? "bg-red-500 text-white ring-red-400"
               : "bg-white text-gray-900 ring-purple-500"
           }`}
         />
-        <button
-          type="submit"
-          className="w-full px-8 py-4 text-2xl font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-2xl transition-all active:scale-95"
-        >
-          Submit Answer
-        </button>
+        {isActive && (
+          <button
+            type="submit"
+            className="w-full px-8 py-4 text-2xl font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-2xl transition-all active:scale-95"
+          >
+            Submit Answer
+          </button>
+        )}
       </form>
 
       {/* Feedback */}
-      {isCorrect !== null && (
+      {displayIsCorrect !== null && (
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           className={`mt-8 text-4xl font-bold ${
-            isCorrect ? "text-green-400" : "text-red-400"
+            displayIsCorrect ? "text-green-400" : "text-red-400"
           }`}
         >
-          {isCorrect ? "✓ Correct!" : "✗ Wrong!"}
+          {displayIsCorrect ? "✓ Correct!" : "✗ Wrong!"}
         </motion.div>
       )}
     </div>
