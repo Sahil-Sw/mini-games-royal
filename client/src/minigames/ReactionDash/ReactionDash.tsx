@@ -1,30 +1,34 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 
 interface ReactionDashProps {
   duration: number;
   onComplete: (score: number, time: number) => void;
 }
 
-const ReactionDash: React.FC<ReactionDashProps> = ({ duration, onComplete }) => {
-  const [color, setColor] = useState('red');
-  const [targetColor] = useState('green');
+const ReactionDash: React.FC<ReactionDashProps> = ({
+  duration,
+  onComplete,
+}) => {
+  const [color, setColor] = useState("red");
+  const [targetColor] = useState("green");
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(duration);
-  const [message, setMessage] = useState('Wait for GREEN...');
+  const [message, setMessage] = useState("Wait for GREEN...");
   const [canClick, setCanClick] = useState(false);
   const changeTimeRef = useRef<number>(0);
   const startTimeRef = useRef<number>(Date.now());
+  const scoreRef = useRef(0);
 
   useEffect(() => {
     startTimeRef.current = Date.now();
     scheduleColorChange();
 
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          onComplete(score, duration);
+          onComplete(scoreRef.current, duration);
           return 0;
         }
         return prev - 1;
@@ -37,31 +41,35 @@ const ReactionDash: React.FC<ReactionDashProps> = ({ duration, onComplete }) => 
   const scheduleColorChange = () => {
     const delay = Math.random() * 3000 + 2000; // 2-5 seconds
     setTimeout(() => {
-      setColor('green');
+      setColor("green");
       setCanClick(true);
-      setMessage('TAP NOW!');
+      setMessage("TAP NOW!");
       changeTimeRef.current = Date.now();
     }, delay);
   };
 
   const handleClick = () => {
-    if (color === 'green' && canClick) {
+    if (color === "green" && canClick) {
       const reactionTime = Date.now() - changeTimeRef.current;
-      setScore(prev => prev + 1);
+      setScore((prev) => {
+        const newScore = prev + 1;
+        scoreRef.current = newScore;
+        return newScore;
+      });
       setMessage(`${reactionTime}ms! Great!`);
-      
+
       // Reset
-      setColor('red');
+      setColor("red");
       setCanClick(false);
       setTimeout(() => {
-        setMessage('Wait for GREEN...');
+        setMessage("Wait for GREEN...");
         if (timeLeft > 2) {
           scheduleColorChange();
         }
       }, 1000);
-    } else if (color === 'red') {
-      setMessage('Too early! Wait for GREEN!');
-      setTimeout(() => setMessage('Wait for GREEN...'), 1000);
+    } else if (color === "red") {
+      setMessage("Too early! Wait for GREEN!");
+      setTimeout(() => setMessage("Wait for GREEN..."), 1000);
     }
   };
 
@@ -92,16 +100,15 @@ const ReactionDash: React.FC<ReactionDashProps> = ({ duration, onComplete }) => 
         whileTap={{ scale: 0.95 }}
         onClick={handleClick}
         className={`w-80 h-80 rounded-full text-6xl font-bold transition-all duration-300 ${
-          color === 'green'
-            ? 'bg-green-500 text-white shadow-2xl shadow-green-500/50'
-            : 'bg-red-500 text-white'
+          color === "green"
+            ? "bg-green-500 text-white shadow-2xl shadow-green-500/50"
+            : "bg-red-500 text-white"
         }`}
       >
-        {color === 'green' ? '🟢' : '🔴'}
+        {color === "green" ? "🟢" : "🔴"}
       </motion.button>
     </div>
   );
 };
 
 export default ReactionDash;
-

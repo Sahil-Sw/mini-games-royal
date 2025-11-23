@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 
 interface ColorCodeProps {
   duration: number;
@@ -7,10 +7,10 @@ interface ColorCodeProps {
 }
 
 const COLORS = [
-  { name: 'RED', color: '#EF4444', emoji: '🔴' },
-  { name: 'BLUE', color: '#3B82F6', emoji: '🔵' },
-  { name: 'GREEN', color: '#10B981', emoji: '🟢' },
-  { name: 'YELLOW', color: '#F59E0B', emoji: '🟡' },
+  { name: "RED", color: "#EF4444", emoji: "🔴" },
+  { name: "BLUE", color: "#3B82F6", emoji: "🔵" },
+  { name: "GREEN", color: "#10B981", emoji: "🟢" },
+  { name: "YELLOW", color: "#F59E0B", emoji: "🟡" },
 ];
 
 const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
@@ -19,15 +19,16 @@ const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(duration);
   const [hints, setHints] = useState<string[]>([]);
+  const scoreRef = useRef(0);
 
   useEffect(() => {
     generateCode();
 
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          onComplete(score, duration);
+          onComplete(scoreRef.current, duration);
           return 0;
         }
         return prev - 1;
@@ -39,8 +40,9 @@ const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
 
   const generateCode = () => {
     const codeLength = 4;
-    const newCode = Array.from({ length: codeLength }, () => 
-      COLORS[Math.floor(Math.random() * COLORS.length)]
+    const newCode = Array.from(
+      { length: codeLength },
+      () => COLORS[Math.floor(Math.random() * COLORS.length)]
     );
     setCode(newCode);
     setUserCode([]);
@@ -50,13 +52,15 @@ const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
   const generateHints = (targetCode: typeof COLORS) => {
     const newHints = [
       `First color: ${targetCode[0].name}`,
-      `Contains ${new Set(targetCode.map(c => c.name)).size} different colors`,
+      `Contains ${
+        new Set(targetCode.map((c) => c.name)).size
+      } different colors`,
       `Last color: ${targetCode[targetCode.length - 1].name}`,
     ];
     setHints(newHints);
   };
 
-  const handleColorClick = (color: typeof COLORS[0]) => {
+  const handleColorClick = (color: (typeof COLORS)[0]) => {
     if (userCode.length >= code.length) return;
 
     const newUserCode = [...userCode, color];
@@ -64,10 +68,16 @@ const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
 
     // Check if complete
     if (newUserCode.length === code.length) {
-      const isCorrect = newUserCode.every((c, idx) => c.name === code[idx].name);
-      
+      const isCorrect = newUserCode.every(
+        (c, idx) => c.name === code[idx].name
+      );
+
       if (isCorrect) {
-        setScore(prev => prev + 1);
+        setScore((prev) => {
+          const newScore = prev + 1;
+          scoreRef.current = newScore;
+          return newScore;
+        });
         setTimeout(() => {
           generateCode();
         }, 1000);
@@ -83,7 +93,8 @@ const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
     setUserCode([]);
   };
 
-  const isCorrect = userCode.length === code.length && 
+  const isCorrect =
+    userCode.length === code.length &&
     userCode.every((c, idx) => c.name === code[idx].name);
   const isWrong = userCode.length === code.length && !isCorrect;
 
@@ -100,13 +111,17 @@ const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
       </div>
 
       {/* Instructions */}
-      <div className="text-2xl text-gray-300 mb-6 text-center">Crack the color code!</div>
+      <div className="text-2xl text-gray-300 mb-6 text-center">
+        Crack the color code!
+      </div>
 
       {/* Hints */}
       <div className="bg-slate-800/50 rounded-2xl p-6 mb-8 max-w-md">
         <h3 className="text-xl font-bold text-white mb-3">Hints:</h3>
         {hints.map((hint, idx) => (
-          <div key={idx} className="text-gray-300 mb-2">💡 {hint}</div>
+          <div key={idx} className="text-gray-300 mb-2">
+            💡 {hint}
+          </div>
         ))}
       </div>
 
@@ -118,14 +133,14 @@ const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
             className={`w-20 h-20 rounded-xl flex items-center justify-center text-4xl transition-all ${
               userCode[idx]
                 ? isCorrect
-                  ? 'bg-green-500'
+                  ? "bg-green-500"
                   : isWrong
-                  ? 'bg-red-500'
-                  : 'bg-slate-700'
-                : 'bg-slate-800 border-2 border-dashed border-slate-600'
+                  ? "bg-red-500"
+                  : "bg-slate-700"
+                : "bg-slate-800 border-2 border-dashed border-slate-600"
             }`}
           >
-            {userCode[idx]?.emoji || '?'}
+            {userCode[idx]?.emoji || "?"}
           </div>
         ))}
       </div>
@@ -172,4 +187,3 @@ const ColorCode: React.FC<ColorCodeProps> = ({ duration, onComplete }) => {
 };
 
 export default ColorCode;
-

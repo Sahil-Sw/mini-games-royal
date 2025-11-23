@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useSocket } from "../../contexts/SocketContext";
 import type { SpeedMathQuestion } from "@shared/index";
@@ -15,6 +15,7 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const scoreRef = useRef(0);
 
   useEffect(() => {
     generateQuestion();
@@ -23,7 +24,7 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          onComplete(score, duration - prev);
+          onComplete(scoreRef.current, duration - prev);
           return 0;
         }
         return prev - 1;
@@ -81,7 +82,11 @@ const SpeedMath: React.FC<SpeedMathProps> = ({ duration, onComplete }) => {
     setIsCorrect(correct);
 
     if (correct) {
-      setScore((prev) => prev + 1);
+      setScore((prev) => {
+        const newScore = prev + 1;
+        scoreRef.current = newScore;
+        return newScore;
+      });
       setTimeout(() => {
         generateQuestion();
       }, 500);

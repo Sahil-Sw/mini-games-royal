@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MemoryFlashProps {
   duration: number;
   onComplete: (score: number, time: number) => void;
 }
 
-const COLORS = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠'];
+const COLORS = ["🔴", "🔵", "🟢", "🟡", "🟣", "🟠"];
 
 const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
   const [sequence, setSequence] = useState<string[]>([]);
@@ -14,17 +14,18 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
   const [isShowing, setIsShowing] = useState(true);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(duration);
-  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const [round, setRound] = useState(1);
+  const scoreRef = useRef(0);
 
   useEffect(() => {
     generateSequence(3); // Start with 3 items
 
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          onComplete(score, duration);
+          onComplete(scoreRef.current, duration);
           return 0;
         }
         return prev - 1;
@@ -35,8 +36,9 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
   }, []);
 
   const generateSequence = (length: number) => {
-    const newSequence = Array.from({ length }, () => 
-      COLORS[Math.floor(Math.random() * COLORS.length)]
+    const newSequence = Array.from(
+      { length },
+      () => COLORS[Math.floor(Math.random() * COLORS.length)]
     );
     setSequence(newSequence);
     setUserSequence([]);
@@ -56,24 +58,30 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
     setUserSequence(newUserSequence);
 
     // Check if correct so far
-    const isCorrectSoFar = newUserSequence.every((c, idx) => c === sequence[idx]);
+    const isCorrectSoFar = newUserSequence.every(
+      (c, idx) => c === sequence[idx]
+    );
 
     if (!isCorrectSoFar) {
-      setFeedback('wrong');
+      setFeedback("wrong");
       setTimeout(() => {
         generateSequence(Math.max(3, sequence.length - 1));
-        setRound(prev => prev + 1);
+        setRound((prev) => prev + 1);
       }, 1500);
       return;
     }
 
     // Check if complete
     if (newUserSequence.length === sequence.length) {
-      setScore(prev => prev + 1);
-      setFeedback('correct');
+      setScore((prev) => {
+        const newScore = prev + 1;
+        scoreRef.current = newScore;
+        return newScore;
+      });
+      setFeedback("correct");
       setTimeout(() => {
         generateSequence(sequence.length + 1);
-        setRound(prev => prev + 1);
+        setRound((prev) => prev + 1);
       }, 1000);
     }
   };
@@ -93,24 +101,25 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
 
       {/* Instructions */}
       <div className="text-2xl text-gray-300 mb-8 text-center">
-        {isShowing ? 'Memorize the sequence!' : 'Repeat the sequence!'}
+        {isShowing ? "Memorize the sequence!" : "Repeat the sequence!"}
       </div>
 
       {/* Sequence Display */}
       <div className="mb-12 min-h-[100px] flex items-center justify-center gap-4">
         <AnimatePresence>
-          {isShowing && sequence.map((color, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              transition={{ delay: idx * 0.2 }}
-              className="text-6xl"
-            >
-              {color}
-            </motion.div>
-          ))}
+          {isShowing &&
+            sequence.map((color, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ delay: idx * 0.2 }}
+                className="text-6xl"
+              >
+                {color}
+              </motion.div>
+            ))}
         </AnimatePresence>
       </div>
 
@@ -155,10 +164,10 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             className={`absolute bottom-20 text-5xl font-bold ${
-              feedback === 'correct' ? 'text-green-400' : 'text-red-400'
+              feedback === "correct" ? "text-green-400" : "text-red-400"
             }`}
           >
-            {feedback === 'correct' ? '✓ Correct!' : '✗ Wrong!'}
+            {feedback === "correct" ? "✓ Correct!" : "✗ Wrong!"}
           </motion.div>
         )}
       </AnimatePresence>
@@ -167,4 +176,3 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({ duration, onComplete }) => {
 };
 
 export default MemoryFlash;
-

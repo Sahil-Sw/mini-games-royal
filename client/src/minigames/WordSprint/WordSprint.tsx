@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 
 interface WordSprintProps {
   duration: number;
@@ -7,27 +7,44 @@ interface WordSprintProps {
 }
 
 const WORDS = [
-  'REACT', 'TYPESCRIPT', 'JAVASCRIPT', 'PYTHON', 'DEVELOPER',
-  'COMPUTER', 'KEYBOARD', 'MONITOR', 'GAMING', 'VICTORY',
-  'CHAMPION', 'BATTLE', 'ROYALE', 'MINIGAME', 'SOCKET',
-  'SERVER', 'CLIENT', 'NETWORK', 'PLAYER', 'WINNER',
+  "REACT",
+  "TYPESCRIPT",
+  "JAVASCRIPT",
+  "PYTHON",
+  "DEVELOPER",
+  "COMPUTER",
+  "KEYBOARD",
+  "MONITOR",
+  "GAMING",
+  "VICTORY",
+  "CHAMPION",
+  "BATTLE",
+  "ROYALE",
+  "MINIGAME",
+  "SOCKET",
+  "SERVER",
+  "CLIENT",
+  "NETWORK",
+  "PLAYER",
+  "WINNER",
 ];
 
 const WordSprint: React.FC<WordSprintProps> = ({ duration, onComplete }) => {
-  const [currentWord, setCurrentWord] = useState('');
-  const [input, setInput] = useState('');
+  const [currentWord, setCurrentWord] = useState("");
+  const [input, setInput] = useState("");
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(duration);
-  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+  const scoreRef = useRef(0);
 
   useEffect(() => {
     generateWord();
 
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          onComplete(score, duration);
+          onComplete(scoreRef.current, duration);
           return 0;
         }
         return prev - 1;
@@ -40,7 +57,7 @@ const WordSprint: React.FC<WordSprintProps> = ({ duration, onComplete }) => {
   const generateWord = () => {
     const word = WORDS[Math.floor(Math.random() * WORDS.length)];
     setCurrentWord(word);
-    setInput('');
+    setInput("");
     setFeedback(null);
   };
 
@@ -48,8 +65,12 @@ const WordSprint: React.FC<WordSprintProps> = ({ duration, onComplete }) => {
     setInput(value.toUpperCase());
 
     if (value.toUpperCase() === currentWord) {
-      setScore(prev => prev + 1);
-      setFeedback('correct');
+      setScore((prev) => {
+        const newScore = prev + 1;
+        scoreRef.current = newScore;
+        return newScore;
+      });
+      setFeedback("correct");
       setTimeout(() => {
         generateWord();
       }, 500);
@@ -69,7 +90,9 @@ const WordSprint: React.FC<WordSprintProps> = ({ duration, onComplete }) => {
       </div>
 
       {/* Instructions */}
-      <div className="text-2xl text-gray-300 mb-8">Type the word as fast as you can!</div>
+      <div className="text-2xl text-gray-300 mb-8">
+        Type the word as fast as you can!
+      </div>
 
       {/* Word to type */}
       <motion.div
@@ -88,24 +111,24 @@ const WordSprint: React.FC<WordSprintProps> = ({ duration, onComplete }) => {
         onChange={(e) => handleInputChange(e.target.value)}
         autoFocus
         className={`w-full max-w-2xl px-8 py-6 text-4xl text-center font-bold rounded-2xl focus:outline-none focus:ring-4 transition-all ${
-          feedback === 'correct'
-            ? 'bg-green-500 text-white ring-green-400'
-            : 'bg-white text-gray-900 ring-purple-500'
+          feedback === "correct"
+            ? "bg-green-500 text-white ring-green-400"
+            : "bg-white text-gray-900 ring-purple-500"
         }`}
         placeholder="Type here..."
       />
 
       {/* Visual feedback for matching letters */}
       <div className="mt-8 text-3xl font-mono">
-        {currentWord.split('').map((char, idx) => (
+        {currentWord.split("").map((char, idx) => (
           <span
             key={idx}
             className={
               input[idx] === char
-                ? 'text-green-400'
+                ? "text-green-400"
                 : input[idx]
-                ? 'text-red-400'
-                : 'text-gray-500'
+                ? "text-red-400"
+                : "text-gray-500"
             }
           >
             {char}
@@ -117,4 +140,3 @@ const WordSprint: React.FC<WordSprintProps> = ({ duration, onComplete }) => {
 };
 
 export default WordSprint;
-
