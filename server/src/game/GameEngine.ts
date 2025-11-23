@@ -77,12 +77,20 @@ export class GameEngine {
     return { winnerId, winnerTeamId };
   }
 
-  updateScores(room: GameRoom, winnerId: string, winnerTeamId?: string): void {
-    // Update player stats
-    const winner = room.players.find(p => p.id === winnerId);
-    if (winner) {
-      winner.stats.roundsWon++;
-    }
+  updateScores(room: GameRoom, winnerId: string, results: PlayerResult[], winnerTeamId?: string): void {
+    // Update all players' stats with their scores
+    results.forEach(result => {
+      const player = room.players.find(p => p.id === result.playerId);
+      if (player) {
+        player.stats.totalScore += result.score;
+        player.stats.roundsPlayed++;
+
+        // Increment rounds won for the winner
+        if (result.playerId === winnerId) {
+          player.stats.roundsWon++;
+        }
+      }
+    });
 
     // Update team score
     if (room.mode === 'team' && winnerTeamId) {
@@ -105,10 +113,20 @@ export class GameEngine {
         teams: sortedTeams.map(t => ({ teamId: t.id, score: t.score })),
       };
     } else {
-      const sortedPlayers = [...room.players].sort((a, b) => b.stats.roundsWon - a.stats.roundsWon);
+      // Sort by total score (primary), then by rounds won (tiebreaker)
+      const sortedPlayers = [...room.players].sort((a, b) => {
+        if (b.stats.totalScore !== a.stats.totalScore) {
+          return b.stats.totalScore - a.stats.totalScore;
+        }
+        return b.stats.roundsWon - a.stats.roundsWon;
+      });
       return {
         winnerId: sortedPlayers[0]?.id,
-        players: sortedPlayers.map(p => ({ playerId: p.id, score: p.stats.roundsWon })),
+        players: sortedPlayers.map(p => ({
+          playerId: p.id,
+          score: p.stats.totalScore,
+          roundsWon: p.stats.roundsWon
+        })),
       };
     }
   }

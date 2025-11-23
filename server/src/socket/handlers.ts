@@ -247,10 +247,11 @@ function endRound(io: ServerType, room: any, round: any) {
   round.winnerId = winnerId;
   round.winnerTeamId = winnerTeamId;
 
-  // Update scores
-  gameEngine.updateScores(room, winnerId, winnerTeamId);
+  // Update scores for all players
+  gameEngine.updateScores(room, winnerId, round.results, winnerTeamId);
 
   console.log(`🏆 Round ${room.currentRound} winner: ${winnerId}`);
+  console.log(`📊 Round results:`, round.results.map((r: any) => `${r.playerId}: ${r.score} pts`).join(', '));
 
   // Emit round end
   io.to(room.id).emit('game:roundEnd', round.results, winnerId, winnerTeamId);

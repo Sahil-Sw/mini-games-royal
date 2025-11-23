@@ -85,30 +85,92 @@ const GameScreen = () => {
       (t) => t.id === gameFinished.winnerTeamId
     );
 
+    // Sort players by total score
+    const finalStandings = currentRoom?.players
+      ? [...currentRoom.players].sort((a, b) => {
+          if (b.stats.totalScore !== a.stats.totalScore) {
+            return b.stats.totalScore - a.stats.totalScore;
+          }
+          return b.stats.roundsWon - a.stats.roundsWon;
+        })
+      : [];
+
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-yellow-900 to-purple-900">
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="text-center"
+          className="max-w-3xl w-full"
         >
-          <div className="text-8xl mb-8">🏆</div>
-          <h1 className="text-6xl font-bold text-yellow-400 mb-4">
-            Game Over!
-          </h1>
-          {winnerTeam ? (
-            <p className="text-4xl text-white mb-8">
-              {winnerTeam.name} Team Wins!
-            </p>
-          ) : (
-            <p className="text-4xl text-white mb-8">{winner?.name} Wins!</p>
-          )}
-          <button
-            onClick={() => navigate("/")}
-            className="px-8 py-4 text-2xl font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-2xl transition-all"
-          >
-            Back to Home
-          </button>
+          <div className="text-center mb-8">
+            <div className="text-8xl mb-8">🏆</div>
+            <h1 className="text-6xl font-bold text-yellow-400 mb-4">
+              Game Over!
+            </h1>
+            {winnerTeam ? (
+              <p className="text-4xl text-white mb-8">
+                {winnerTeam.name} Team Wins!
+              </p>
+            ) : (
+              <p className="text-4xl text-white mb-8">{winner?.name} Wins!</p>
+            )}
+          </div>
+
+          {/* Final Standings */}
+          <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-6 mb-8">
+            <h2 className="text-2xl font-bold text-white mb-4 text-center">
+              Final Standings
+            </h2>
+            <div className="space-y-3">
+              {finalStandings.map((player, index) => (
+                <div
+                  key={player.id}
+                  className={`flex items-center justify-between p-4 rounded-lg ${
+                    index === 0
+                      ? "bg-yellow-500/30 border-2 border-yellow-500"
+                      : index === 1
+                      ? "bg-gray-400/20 border-2 border-gray-400"
+                      : index === 2
+                      ? "bg-orange-600/20 border-2 border-orange-600"
+                      : "bg-slate-700/50"
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="text-3xl font-bold text-white">
+                      {index === 0
+                        ? "🥇"
+                        : index === 1
+                        ? "🥈"
+                        : index === 2
+                        ? "🥉"
+                        : `#${index + 1}`}
+                    </span>
+                    <span className="text-2xl text-white font-bold">
+                      {player.name}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-yellow-400">
+                      {player.stats.totalScore} pts
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {player.stats.roundsWon} wins •{" "}
+                      {player.stats.roundsPlayed} rounds
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-center">
+            <button
+              onClick={() => navigate("/")}
+              className="px-8 py-4 text-2xl font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-2xl transition-all"
+            >
+              Back to Home
+            </button>
+          </div>
         </motion.div>
       </div>
     );
@@ -124,12 +186,22 @@ const GameScreen = () => {
       return (a.time || Infinity) - (b.time || Infinity);
     });
 
+    // Sort players by total score for overall standings
+    const overallStandings = currentRoom?.players
+      ? [...currentRoom.players].sort((a, b) => {
+          if (b.stats.totalScore !== a.stats.totalScore) {
+            return b.stats.totalScore - a.stats.totalScore;
+          }
+          return b.stats.roundsWon - a.stats.roundsWon;
+        })
+      : [];
+
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-900 to-purple-900">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="max-w-2xl w-full"
+          className="max-w-3xl w-full"
         >
           <div className="text-center mb-8">
             <div className="text-6xl mb-4">🏆</div>
@@ -139,17 +211,59 @@ const GameScreen = () => {
             <p className="text-2xl text-white">Winner: {winner?.name}</p>
           </div>
 
-          <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-6 space-y-3">
-            {sortedResults.map((result, index) => {
-              const player = currentRoom?.players.find(
-                (p) => p.id === result.playerId
-              );
-              return (
+          {/* Round Results */}
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-white mb-3 text-center">
+              This Round
+            </h3>
+            <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-6 space-y-3">
+              {sortedResults.map((result, index) => {
+                const player = currentRoom?.players.find(
+                  (p) => p.id === result.playerId
+                );
+                return (
+                  <div
+                    key={result.playerId}
+                    className={`flex items-center justify-between p-4 rounded-lg ${
+                      index === 0
+                        ? "bg-yellow-500/20 border-2 border-yellow-500"
+                        : "bg-slate-700/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="text-2xl font-bold text-white">
+                        #{index + 1}
+                      </span>
+                      <span className="text-xl text-white">{player?.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-yellow-400">
+                        {result.score} pts
+                      </div>
+                      {result.time && (
+                        <div className="text-sm text-gray-400">
+                          {result.time.toFixed(1)}s
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Overall Standings */}
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-white mb-3 text-center">
+              Overall Standings
+            </h3>
+            <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-6 space-y-3">
+              {overallStandings.map((player, index) => (
                 <div
-                  key={result.playerId}
+                  key={player.id}
                   className={`flex items-center justify-between p-4 rounded-lg ${
                     index === 0
-                      ? "bg-yellow-500/20 border-2 border-yellow-500"
+                      ? "bg-green-500/20 border-2 border-green-500"
                       : "bg-slate-700/50"
                   }`}
                 >
@@ -157,21 +271,19 @@ const GameScreen = () => {
                     <span className="text-2xl font-bold text-white">
                       #{index + 1}
                     </span>
-                    <span className="text-xl text-white">{player?.name}</span>
+                    <span className="text-xl text-white">{player.name}</span>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-yellow-400">
-                      {result.score} pts
+                    <div className="text-2xl font-bold text-green-400">
+                      {player.stats.totalScore} pts
                     </div>
-                    {result.time && (
-                      <div className="text-sm text-gray-400">
-                        {result.time.toFixed(1)}s
-                      </div>
-                    )}
+                    <div className="text-sm text-gray-400">
+                      {player.stats.roundsWon} wins
+                    </div>
                   </div>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
 
           <div className="text-center mt-8 text-gray-400">
