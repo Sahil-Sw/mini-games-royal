@@ -69,8 +69,13 @@ export class RoomManager {
       throw new Error('Room is full');
     }
 
-    if (room.state !== 'lobby') {
-      throw new Error('Game already started');
+    if (room.state !== 'lobby' && room.state !== 'finished') {
+      throw new Error('Game already in progress');
+    }
+
+    // If room is finished, reset it to lobby for a new game
+    if (room.state === 'finished') {
+      this.resetRoom(room);
     }
 
     room.players.push(player);
@@ -86,6 +91,33 @@ export class RoomManager {
 
     console.log(`✅ Player ${player.name} joined room ${roomCode}`);
     return room;
+  }
+
+  resetRoom(room: GameRoom): void {
+    room.state = 'lobby';
+    room.currentRound = 0;
+    room.rounds = [];
+
+    // Reset player stats
+    room.players.forEach(player => {
+      player.isReady = player.isHost; // Host is auto-ready
+      player.stats = {
+        roundsWon: 0,
+        roundsPlayed: 0,
+        totalScore: 0,
+        gamesPlayed: player.stats.gamesPlayed + 1,
+        gamesWon: player.stats.gamesWon,
+      };
+    });
+
+    // Reset team scores
+    if (room.mode === 'team') {
+      room.teams.forEach(team => {
+        team.score = 0;
+      });
+    }
+
+    console.log(`🔄 Room ${room.code} reset to lobby`);
   }
 
   removePlayerFromRoom(roomId: string, playerId: string): GameRoom | null {

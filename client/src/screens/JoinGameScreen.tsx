@@ -8,21 +8,41 @@ import { storage } from "../utils/storage";
 
 const JoinGameScreen = () => {
   const navigate = useNavigate();
-  const { socket } = useSocket();
-  const { setCurrentRoom, setCurrentPlayer, setLoading, setError } =
-    useGameStore();
+  const { socket, isConnected } = useSocket();
+  const {
+    setCurrentRoom,
+    setCurrentPlayer,
+    setLoading,
+    setError,
+    error,
+    isLoading,
+  } = useGameStore();
 
   const [playerName, setPlayerName] = useState(storage.getPlayerName() || "");
   const [roomCode, setRoomCode] = useState("");
 
   const handleJoin = () => {
-    if (!socket || !playerName.trim() || !roomCode.trim()) {
+    setError(null); // Clear previous errors
+
+    if (!socket) {
+      setError("Not connected to server. Please refresh the page.");
+      return;
+    }
+
+    if (!playerName.trim() || !roomCode.trim()) {
       setError("Please enter your name and room code");
+      return;
+    }
+
+    if (roomCode.length !== 6) {
+      setError("Room code must be 6 characters");
       return;
     }
 
     setLoading(true);
     storage.setPlayerName(playerName);
+
+    console.log(`Attempting to join room: ${roomCode.toUpperCase()}`);
 
     socket.emit(
       "room:join",
@@ -31,6 +51,8 @@ const JoinGameScreen = () => {
       detectPlatform(),
       (response) => {
         setLoading(false);
+
+        console.log("Join response:", response);
 
         if (response.success && response.room && response.playerId) {
           setCurrentRoom(response.room);
@@ -97,15 +119,36 @@ const JoinGameScreen = () => {
           />
         </div>
 
+        {/* Connection Status */}
+        {!isConnected && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <p className="text-sm text-red-300">
+              ⚠️ Not connected to server. Please wait or refresh the page.
+            </p>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <p className="text-sm text-red-300">{error}</p>
+          </div>
+        )}
+
         {/* Join Button */}
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleJoin}
-          disabled={!playerName.trim() || roomCode.length !== 6}
+          disabled={
+            !playerName.trim() ||
+            roomCode.length !== 6 ||
+            !isConnected ||
+            isLoading
+          }
           className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-bold text-white text-lg disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all"
         >
-          Join Game Room
+          {isLoading ? "Joining..." : "Join Game Room"}
         </motion.button>
 
         {/* Info */}
