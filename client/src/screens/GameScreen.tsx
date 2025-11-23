@@ -615,19 +615,33 @@ const GameScreen = () => {
               )}
             </div>
 
-            {/* Spectator View Message */}
-            <div className="bg-slate-800/80 backdrop-blur-lg rounded-2xl p-8 text-center">
-              <div className="text-6xl mb-4">🎮</div>
-              <h3 className="text-2xl font-bold text-white mb-2">
-                Watching {spectatedPlayer?.name}
-              </h3>
-              <p className="text-gray-300 mb-4">
-                You'll play in an upcoming round!
-              </p>
-              <div className="text-sm text-gray-400">
-                In team mode, players take turns representing their team each
-                round.
+            {/* Spectator View - Show actual minigame */}
+            <div className="relative">
+              {/* Spectator overlay banner */}
+              <div className="absolute top-0 left-0 right-0 z-50 bg-purple-600/95 backdrop-blur-sm text-white text-center py-3 px-4 shadow-lg">
+                <p className="font-bold text-lg">
+                  👁️ Spectating: {spectatedPlayer?.name}
+                  {spectatedTeam && (
+                    <span className="ml-2 text-sm opacity-90">
+                      ({spectatedTeam.name})
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs opacity-90 mt-1">
+                  You'll play in an upcoming round!
+                </p>
               </div>
+
+              {/* Render the actual minigame in spectator mode */}
+              <div className="pointer-events-none opacity-90">
+                <MiniGameComponent
+                  duration={minigameData.config.duration}
+                  onComplete={() => {}} // No-op for spectators
+                />
+              </div>
+
+              {/* Semi-transparent overlay to indicate spectator mode */}
+              <div className="absolute inset-0 bg-purple-900/20 pointer-events-none z-40" />
             </div>
           </div>
         </div>
