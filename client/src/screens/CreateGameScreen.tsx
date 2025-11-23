@@ -22,6 +22,9 @@ const CreateGameScreen = () => {
   const [mode, setMode] = useState<GameMode>("team");
   const [numberOfTeams, setNumberOfTeams] = useState(2);
   const [numberOfRounds, setNumberOfRounds] = useState(10);
+  const [teamAssignment, setTeamAssignment] = useState<"random" | "manual">(
+    "random"
+  );
   const [selectedMinigames, setSelectedMinigames] = useState<MiniGameType[]>(
     Object.keys(MINIGAME_CONFIGS) as MiniGameType[]
   );
@@ -44,6 +47,7 @@ const CreateGameScreen = () => {
         numberOfRounds,
         enabledMinigames: selectedMinigames,
         roundDuration: 30,
+        teamAssignment: mode === "team" ? teamAssignment : undefined,
       },
       playerName,
       (response) => {
@@ -135,19 +139,55 @@ const CreateGameScreen = () => {
 
         {/* Number of Teams (only for team mode) */}
         {mode === "team" && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Number of Teams: {numberOfTeams}
-            </label>
-            <input
-              type="range"
-              min={GAME_CONSTANTS.MIN_TEAMS}
-              max={GAME_CONSTANTS.MAX_TEAMS}
-              value={numberOfTeams}
-              onChange={(e) => setNumberOfTeams(Number(e.target.value))}
-              className="w-full"
-            />
-          </div>
+          <>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Number of Teams: {numberOfTeams}
+              </label>
+              <input
+                type="range"
+                min={GAME_CONSTANTS.MIN_TEAMS}
+                max={GAME_CONSTANTS.MAX_TEAMS}
+                value={numberOfTeams}
+                onChange={(e) => setNumberOfTeams(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            {/* Team Assignment Mode */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Team Assignment
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setTeamAssignment("random")}
+                  className={`py-3 rounded-lg font-medium transition-all ${
+                    teamAssignment === "random"
+                      ? "bg-purple-500 text-white"
+                      : "bg-slate-700 text-gray-300 hover:bg-slate-600"
+                  }`}
+                >
+                  🎲 Random
+                </button>
+                <button
+                  onClick={() => setTeamAssignment("manual")}
+                  className={`py-3 rounded-lg font-medium transition-all ${
+                    teamAssignment === "manual"
+                      ? "bg-purple-500 text-white"
+                      : "bg-slate-700 text-gray-300 hover:bg-slate-600"
+                  }`}
+                >
+                  ✋ Manual
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                {teamAssignment === "random"
+                  ? "Teams will be randomly assigned when game starts"
+                  : "Host can manually assign players to teams in lobby"}
+              </p>
+            </div>
+          </>
         )}
 
         {/* Number of Rounds */}

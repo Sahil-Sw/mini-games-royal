@@ -12,6 +12,8 @@ export interface ClientToServerEvents {
   // Lobby
   'lobby:ready': (isReady: boolean) => void;
   'lobby:changeTeam': (teamId: string) => void;
+  'lobby:assignPlayerToTeam': (playerId: string, teamId: string) => void; // Host assigns player to team
+  'lobby:randomizeTeams': () => void; // Host randomizes team assignments
   'lobby:startGame': () => void;
   
   // Game flow

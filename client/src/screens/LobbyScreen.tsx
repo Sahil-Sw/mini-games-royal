@@ -55,6 +55,24 @@ const LobbyScreen = () => {
     }
   };
 
+  const handleAssignPlayerToTeam = (playerId: string, teamId: string) => {
+    if (socket && isHost) {
+      socket.emit("lobby:assignPlayerToTeam", playerId, teamId);
+    }
+  };
+
+  const handleRandomizeTeams = () => {
+    if (socket && isHost) {
+      socket.emit("lobby:randomizeTeams");
+    }
+  };
+
+  const handleChangeTeam = (teamId: string) => {
+    if (socket) {
+      socket.emit("lobby:changeTeam", teamId);
+    }
+  };
+
   if (!currentRoom) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
@@ -90,49 +108,230 @@ const LobbyScreen = () => {
           </div>
         </div>
 
-        {/* Players */}
-        <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl p-6 mb-6">
-          <h2 className="text-xl font-bold text-white mb-4">
-            Players ({currentRoom.players.length}/
-            {currentRoom.config.maxPlayers})
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {currentRoom.players.map((player) => (
-              <motion.div
-                key={player.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className={`p-4 rounded-lg ${
-                  player.isReady
-                    ? "bg-green-500/20 border-2 border-green-500"
-                    : "bg-slate-700"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">{player.avatar || "👤"}</span>
-                    <div>
-                      <div className="font-medium text-white">
-                        {player.name}
-                        {player.isHost && (
-                          <span className="ml-2 text-xs bg-yellow-500 px-2 py-1 rounded">
-                            HOST
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        {player.platform}
-                      </div>
+        {/* Players / Teams */}
+        {currentRoom.mode === "team" ? (
+          <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl p-6 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-white">
+                Teams ({currentRoom.players.length}/
+                {currentRoom.config.maxPlayers} players)
+              </h2>
+              {isHost && currentRoom.config.teamAssignment === "random" && (
+                <button
+                  onClick={handleRandomizeTeams}
+                  className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm font-medium"
+                >
+                  🎲 Randomize Teams
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {currentRoom.teams.map((team) => {
+                const teamPlayers = currentRoom.players.filter(
+                  (p) => p.teamId === team.id
+                );
+                return (
+                  <div
+                    key={team.id}
+                    className="bg-slate-700/50 rounded-xl p-4"
+                    style={{ borderLeft: `4px solid ${team.color}` }}
+                  >
+                    <h3
+                      className="text-lg font-bold mb-3"
+                      style={{ color: team.color }}
+                    >
+                      {team.name} ({teamPlayers.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {teamPlayers.map((player) => (
+                        <div
+                          key={player.id}
+                          className={`p-3 rounded-lg ${
+                            player.isReady
+                              ? "bg-green-500/20 border border-green-500"
+                              : "bg-slate-600/50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl">
+                                {player.avatar || "👤"}
+                              </span>
+                              <div>
+                                <div className="font-medium text-white text-sm">
+                                  {player.name}
+                                  {player.isHost && (
+                                    <span className="ml-2 text-xs bg-yellow-500 px-1.5 py-0.5 rounded">
+                                      HOST
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {player.isReady && (
+                                <span className="text-green-400 text-sm">
+                                  ✓
+                                </span>
+                              )}
+                              {isHost &&
+                                currentRoom.config.teamAssignment ===
+                                  "manual" && (
+                                  <select
+                                    value={team.id}
+                                    onChange={(e) =>
+                                      handleAssignPlayerToTeam(
+                                        player.id,
+                                        e.target.value
+                                      )
+                                    }
+                                    className="bg-slate-600 text-white text-xs px-2 py-1 rounded"
+                                  >
+                                    {currentRoom.teams.map((t) => (
+                                      <option key={t.id} value={t.id}>
+                                        {t.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {teamPlayers.length === 0 && (
+                        <div className="text-gray-400 text-sm text-center py-2">
+                          No players yet
+                        </div>
+                      )}
                     </div>
                   </div>
-                  {player.isReady && (
-                    <span className="text-green-400">✓ Ready</span>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+                );
+              })}
+            </div>
+
+            {/* Unassigned players (for manual mode) */}
+            {currentRoom.config.teamAssignment === "manual" &&
+              (() => {
+                const unassignedPlayers = currentRoom.players.filter(
+                  (p) => !p.teamId
+                );
+                if (unassignedPlayers.length > 0) {
+                  return (
+                    <div className="mt-4 bg-slate-700/50 rounded-xl p-4">
+                      <h3 className="text-lg font-bold text-gray-300 mb-3">
+                        Unassigned Players ({unassignedPlayers.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {unassignedPlayers.map((player) => (
+                          <div
+                            key={player.id}
+                            className="p-3 rounded-lg bg-slate-600/50 flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl">
+                                {player.avatar || "👤"}
+                              </span>
+                              <div className="font-medium text-white text-sm">
+                                {player.name}
+                                {player.isHost && (
+                                  <span className="ml-2 text-xs bg-yellow-500 px-1.5 py-0.5 rounded">
+                                    HOST
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {isHost ? (
+                              <select
+                                onChange={(e) =>
+                                  handleAssignPlayerToTeam(
+                                    player.id,
+                                    e.target.value
+                                  )
+                                }
+                                className="bg-slate-600 text-white text-xs px-2 py-1 rounded"
+                                defaultValue=""
+                              >
+                                <option value="" disabled>
+                                  Assign to team...
+                                </option>
+                                {currentRoom.teams.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.name}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <select
+                                onChange={(e) =>
+                                  handleChangeTeam(e.target.value)
+                                }
+                                className="bg-slate-600 text-white text-xs px-2 py-1 rounded"
+                                defaultValue=""
+                              >
+                                <option value="" disabled>
+                                  Choose team...
+                                </option>
+                                {currentRoom.teams.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
           </div>
-        </div>
+        ) : (
+          <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl p-6 mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">
+              Players ({currentRoom.players.length}/
+              {currentRoom.config.maxPlayers})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {currentRoom.players.map((player) => (
+                <motion.div
+                  key={player.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={`p-4 rounded-lg ${
+                    player.isReady
+                      ? "bg-green-500/20 border-2 border-green-500"
+                      : "bg-slate-700"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{player.avatar || "👤"}</span>
+                      <div>
+                        <div className="font-medium text-white">
+                          {player.name}
+                          {player.isHost && (
+                            <span className="ml-2 text-xs bg-yellow-500 px-2 py-1 rounded">
+                              HOST
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {player.platform}
+                        </div>
+                      </div>
+                    </div>
+                    {player.isReady && (
+                      <span className="text-green-400">✓ Ready</span>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Game Settings */}
         <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl p-6 mb-6">

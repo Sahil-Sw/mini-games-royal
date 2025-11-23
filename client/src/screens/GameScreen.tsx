@@ -116,50 +116,126 @@ const GameScreen = () => {
             )}
           </div>
 
-          {/* Final Standings */}
+          {/* Team Final Standings (if team mode) */}
+          {currentRoom?.mode === "team" && currentRoom.teams.length > 0 && (
+            <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-6 mb-6">
+              <h2 className="text-2xl font-bold text-white mb-4 text-center">
+                Team Final Standings
+              </h2>
+              <div className="space-y-3">
+                {[...currentRoom.teams]
+                  .sort((a, b) => b.score - a.score)
+                  .map((team, index) => (
+                    <div
+                      key={team.id}
+                      className={`flex items-center justify-between p-4 rounded-lg ${
+                        index === 0
+                          ? "bg-yellow-500/30 border-2 border-yellow-500"
+                          : index === 1
+                          ? "bg-gray-400/20 border-2 border-gray-400"
+                          : index === 2
+                          ? "bg-orange-600/20 border-2 border-orange-600"
+                          : "bg-slate-700/50"
+                      }`}
+                      style={{ borderLeft: `4px solid ${team.color}` }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="text-3xl font-bold text-white">
+                          {index === 0
+                            ? "🥇"
+                            : index === 1
+                            ? "🥈"
+                            : index === 2
+                            ? "🥉"
+                            : `#${index + 1}`}
+                        </span>
+                        <span
+                          className="text-2xl font-bold"
+                          style={{ color: team.color }}
+                        >
+                          {team.name}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-yellow-400">
+                          {team.score} rounds won
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {team.playerIds.length} players
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Final Standings (Individual) */}
           <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-6 mb-8">
             <h2 className="text-2xl font-bold text-white mb-4 text-center">
-              Final Standings
+              {currentRoom?.mode === "team"
+                ? "Individual Final Scores"
+                : "Final Standings"}
             </h2>
             <div className="space-y-3">
-              {finalStandings.map((player, index) => (
-                <div
-                  key={player.id}
-                  className={`flex items-center justify-between p-4 rounded-lg ${
-                    index === 0
-                      ? "bg-yellow-500/30 border-2 border-yellow-500"
-                      : index === 1
-                      ? "bg-gray-400/20 border-2 border-gray-400"
-                      : index === 2
-                      ? "bg-orange-600/20 border-2 border-orange-600"
-                      : "bg-slate-700/50"
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="text-3xl font-bold text-white">
-                      {index === 0
-                        ? "🥇"
-                        : index === 1
-                        ? "🥈"
-                        : index === 2
-                        ? "🥉"
-                        : `#${index + 1}`}
-                    </span>
-                    <span className="text-2xl text-white font-bold">
-                      {player.name}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-yellow-400">
-                      {player.stats.totalScore} pts
+              {finalStandings.map((player, index) => {
+                const playerTeam = currentRoom?.teams.find(
+                  (t) => t.id === player.teamId
+                );
+                return (
+                  <div
+                    key={player.id}
+                    className={`flex items-center justify-between p-4 rounded-lg ${
+                      index === 0 && currentRoom?.mode !== "team"
+                        ? "bg-yellow-500/30 border-2 border-yellow-500"
+                        : index === 1 && currentRoom?.mode !== "team"
+                        ? "bg-gray-400/20 border-2 border-gray-400"
+                        : index === 2 && currentRoom?.mode !== "team"
+                        ? "bg-orange-600/20 border-2 border-orange-600"
+                        : "bg-slate-700/50"
+                    }`}
+                    style={
+                      playerTeam
+                        ? { borderLeft: `4px solid ${playerTeam.color}` }
+                        : {}
+                    }
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl font-bold text-white">
+                        {index === 0 && currentRoom?.mode !== "team"
+                          ? "🥇"
+                          : index === 1 && currentRoom?.mode !== "team"
+                          ? "🥈"
+                          : index === 2 && currentRoom?.mode !== "team"
+                          ? "🥉"
+                          : `#${index + 1}`}
+                      </span>
+                      <div>
+                        <span className="text-2xl text-white font-bold">
+                          {player.name}
+                        </span>
+                        {playerTeam && (
+                          <span
+                            className="ml-2 text-sm"
+                            style={{ color: playerTeam.color }}
+                          >
+                            ({playerTeam.name})
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-400">
-                      {player.stats.roundsWon} wins •{" "}
-                      {player.stats.roundsPlayed} rounds
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-yellow-400">
+                        {player.stats.totalScore} pts
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        {player.stats.roundsWon} wins •{" "}
+                        {player.stats.roundsPlayed} rounds
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -252,37 +328,105 @@ const GameScreen = () => {
             </div>
           </div>
 
-          {/* Overall Standings */}
+          {/* Team Standings (if team mode) */}
+          {currentRoom?.mode === "team" && currentRoom.teams.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-xl font-bold text-white mb-3 text-center">
+                Team Standings
+              </h3>
+              <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-6 space-y-3">
+                {[...currentRoom.teams]
+                  .sort((a, b) => b.score - a.score)
+                  .map((team, index) => (
+                    <div
+                      key={team.id}
+                      className={`flex items-center justify-between p-4 rounded-lg ${
+                        index === 0
+                          ? "bg-green-500/20 border-2 border-green-500"
+                          : "bg-slate-700/50"
+                      }`}
+                      style={{ borderLeft: `4px solid ${team.color}` }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="text-2xl font-bold text-white">
+                          #{index + 1}
+                        </span>
+                        <span
+                          className="text-xl font-bold"
+                          style={{ color: team.color }}
+                        >
+                          {team.name}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-green-400">
+                          {team.score} rounds won
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {team.playerIds.length} players
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Overall Standings (Individual) */}
           <div className="mb-6">
             <h3 className="text-xl font-bold text-white mb-3 text-center">
-              Overall Standings
+              {currentRoom?.mode === "team"
+                ? "Individual Scores"
+                : "Overall Standings"}
             </h3>
             <div className="bg-slate-800/50 backdrop-blur-lg rounded-xl p-6 space-y-3">
-              {overallStandings.map((player, index) => (
-                <div
-                  key={player.id}
-                  className={`flex items-center justify-between p-4 rounded-lg ${
-                    index === 0
-                      ? "bg-green-500/20 border-2 border-green-500"
-                      : "bg-slate-700/50"
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl font-bold text-white">
-                      #{index + 1}
-                    </span>
-                    <span className="text-xl text-white">{player.name}</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-green-400">
-                      {player.stats.totalScore} pts
+              {overallStandings.map((player, index) => {
+                const playerTeam = currentRoom?.teams.find(
+                  (t) => t.id === player.teamId
+                );
+                return (
+                  <div
+                    key={player.id}
+                    className={`flex items-center justify-between p-4 rounded-lg ${
+                      index === 0 && currentRoom?.mode !== "team"
+                        ? "bg-green-500/20 border-2 border-green-500"
+                        : "bg-slate-700/50"
+                    }`}
+                    style={
+                      playerTeam
+                        ? { borderLeft: `4px solid ${playerTeam.color}` }
+                        : {}
+                    }
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="text-2xl font-bold text-white">
+                        #{index + 1}
+                      </span>
+                      <div>
+                        <span className="text-xl text-white">
+                          {player.name}
+                        </span>
+                        {playerTeam && (
+                          <span
+                            className="ml-2 text-sm"
+                            style={{ color: playerTeam.color }}
+                          >
+                            ({playerTeam.name})
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-400">
-                      {player.stats.roundsWon} wins
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-green-400">
+                        {player.stats.totalScore} pts
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        {player.stats.roundsWon} wins
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

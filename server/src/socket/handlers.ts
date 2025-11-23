@@ -132,6 +132,40 @@ export function setupSocketHandlers(io: ServerType) {
       }
     });
 
+    // Host assigns player to team (manual assignment)
+    socket.on('lobby:assignPlayerToTeam', (playerId, teamId) => {
+      const { roomId } = socket.data;
+      if (!roomId) return;
+
+      const room = roomManager.getRoomById(roomId);
+      if (!room || room.hostId !== socket.data.playerId) {
+        console.log('⚠️ Only host can assign teams');
+        return;
+      }
+
+      const updatedRoom = roomManager.assignPlayerToTeam(roomId, playerId, teamId);
+      if (updatedRoom) {
+        io.to(roomId).emit('room:updated', updatedRoom);
+      }
+    });
+
+    // Host randomizes teams
+    socket.on('lobby:randomizeTeams', () => {
+      const { roomId } = socket.data;
+      if (!roomId) return;
+
+      const room = roomManager.getRoomById(roomId);
+      if (!room || room.hostId !== socket.data.playerId) {
+        console.log('⚠️ Only host can randomize teams');
+        return;
+      }
+
+      const updatedRoom = roomManager.randomizeTeams(roomId);
+      if (updatedRoom) {
+        io.to(roomId).emit('room:updated', updatedRoom);
+      }
+    });
+
     // Start game
     socket.on('lobby:startGame', async () => {
       const { playerId, roomId } = socket.data;

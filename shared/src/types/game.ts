@@ -26,6 +26,7 @@ export interface GameConfig {
   targetScore?: number;
   enabledMinigames: MiniGameType[];
   roundDuration: number; // seconds
+  teamAssignment?: 'random' | 'manual'; // How teams are assigned in team mode
 }
 
 export interface Team {

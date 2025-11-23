@@ -80,14 +80,15 @@ export class RoomManager {
 
     room.players.push(player);
 
-    // Auto-assign to team if team mode
-    if (room.mode === 'team' && room.teams.length > 0) {
+    // Auto-assign to team if team mode and random assignment
+    if (room.mode === 'team' && room.teams.length > 0 && room.config.teamAssignment === 'random') {
       const smallestTeam = room.teams.reduce((prev, curr) =>
         prev.playerIds.length < curr.playerIds.length ? prev : curr
       );
       smallestTeam.playerIds.push(player.id);
       player.teamId = smallestTeam.id;
     }
+    // For manual assignment, players start without a team
 
     console.log(`✅ Player ${player.name} joined room ${roomCode}`);
     return room;
@@ -190,6 +191,38 @@ export class RoomManager {
       player.teamId = teamId;
     }
 
+    return room;
+  }
+
+  assignPlayerToTeam(roomId: string, playerId: string, teamId: string): GameRoom | null {
+    // Same as changePlayerTeam but can be called by host
+    return this.changePlayerTeam(roomId, playerId, teamId);
+  }
+
+  randomizeTeams(roomId: string): GameRoom | null {
+    const room = this.rooms.get(roomId);
+    if (!room || room.mode !== 'team') return null;
+
+    // Clear all team assignments
+    room.teams.forEach(team => {
+      team.playerIds = [];
+    });
+    room.players.forEach(player => {
+      player.teamId = undefined;
+    });
+
+    // Shuffle players
+    const shuffledPlayers = [...room.players].sort(() => Math.random() - 0.5);
+
+    // Distribute players evenly across teams
+    shuffledPlayers.forEach((player, index) => {
+      const teamIndex = index % room.teams.length;
+      const team = room.teams[teamIndex];
+      team.playerIds.push(player.id);
+      player.teamId = team.id;
+    });
+
+    console.log(`🎲 Teams randomized in room ${room.code}`);
     return room;
   }
 
