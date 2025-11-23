@@ -78,10 +78,13 @@ export class GameEngine {
   }
 
   updateScores(room: GameRoom, winnerId: string, results: PlayerResult[], winnerTeamId?: string): void {
+    console.log(`📈 Updating scores for ${results.length} players...`);
+
     // Update all players' stats with their scores
     results.forEach(result => {
       const player = room.players.find(p => p.id === result.playerId);
       if (player) {
+        const oldScore = player.stats.totalScore;
         player.stats.totalScore += result.score;
         player.stats.roundsPlayed++;
 
@@ -89,6 +92,10 @@ export class GameEngine {
         if (result.playerId === winnerId) {
           player.stats.roundsWon++;
         }
+
+        console.log(`  ${player.name}: ${oldScore} + ${result.score} = ${player.stats.totalScore} (rounds won: ${player.stats.roundsWon})`);
+      } else {
+        console.log(`  ⚠️ Player not found: ${result.playerId}`);
       }
     });
 

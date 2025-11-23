@@ -160,10 +160,23 @@ export function setupSocketHandlers(io: ServerType) {
       if (!roomId) return;
 
       const room = roomManager.getRoomById(roomId);
-      if (!room || room.state !== 'playing') return;
+      if (!room || room.state !== 'playing') {
+        console.log(`⚠️ Cannot submit - room state is ${room?.state}`);
+        return;
+      }
 
       const currentRound = room.rounds[room.rounds.length - 1];
-      if (!currentRound) return;
+      if (!currentRound) {
+        console.log(`⚠️ No current round found`);
+        return;
+      }
+
+      // Check if player already submitted
+      const alreadySubmitted = currentRound.results.some(r => r.playerId === data.playerId);
+      if (alreadySubmitted) {
+        console.log(`⚠️ Player ${data.playerId} already submitted for this round`);
+        return;
+      }
 
       // Add result to round
       const result = {
@@ -173,10 +186,11 @@ export function setupSocketHandlers(io: ServerType) {
       };
       currentRound.results.push(result);
 
-      console.log(`📊 Player ${data.playerId} submitted score: ${result.score}`);
+      console.log(`📊 Player ${data.playerId} submitted score: ${result.score} (${currentRound.results.length}/${room.players.length})`);
 
       // Check if all players have submitted
       if (currentRound.results.length === room.players.length) {
+        console.log(`✅ All players submitted, ending round...`);
         endRound(io, room, currentRound);
       }
     });
@@ -239,19 +253,26 @@ function startRound(io: ServerType, room: any) {
 }
 
 function endRound(io: ServerType, room: any, round: any) {
+  console.log(`\n🏁 Ending round ${room.currentRound}...`);
   room.state = 'roundResult';
   round.endTime = new Date();
+
+  console.log(`📊 Round results:`, round.results.map((r: any) => `${r.playerId}: ${r.score} pts`).join(', '));
 
   // Determine winner
   const { winnerId, winnerTeamId } = gameEngine.determineWinner(round.results, room);
   round.winnerId = winnerId;
   round.winnerTeamId = winnerTeamId;
 
+  console.log(`🏆 Round ${room.currentRound} winner: ${winnerId}`);
+
   // Update scores for all players
   gameEngine.updateScores(room, winnerId, round.results, winnerTeamId);
 
-  console.log(`🏆 Round ${room.currentRound} winner: ${winnerId}`);
-  console.log(`📊 Round results:`, round.results.map((r: any) => `${r.playerId}: ${r.score} pts`).join(', '));
+  console.log(`\n📋 Current player stats after round ${room.currentRound}:`);
+  room.players.forEach((p: any) => {
+    console.log(`  ${p.name}: totalScore=${p.stats.totalScore}, roundsWon=${p.stats.roundsWon}, roundsPlayed=${p.stats.roundsPlayed}`);
+  });
 
   // Emit round end
   io.to(room.id).emit('game:roundEnd', round.results, winnerId, winnerTeamId);
