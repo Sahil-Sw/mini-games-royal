@@ -24,13 +24,16 @@ export class GameEngine {
 
   selectPlayersForRound(room: GameRoom): string[] {
     if (room.mode === 'team') {
-      // Select one random player from each team
+      // Round-robin: Select one player from each team, rotating through team members
       return room.teams
         .map(team => {
-          const teamPlayers = room.players.filter(p => p.teamId === team.id);
+          const teamPlayers = room.players.filter(p => p.teamId === team.id && p.isConnected);
           if (teamPlayers.length === 0) return null;
-          const randomIndex = Math.floor(Math.random() * teamPlayers.length);
-          return teamPlayers[randomIndex].id;
+
+          // Use round number to rotate through players
+          // This ensures each player gets a turn in order
+          const playerIndex = (room.currentRound) % teamPlayers.length;
+          return teamPlayers[playerIndex].id;
         })
         .filter(Boolean) as string[];
     } else {

@@ -45,6 +45,17 @@ export class RoomManager {
       createdAt: new Date(),
     };
 
+    // Assign host to a team in team mode
+    if (config.mode === 'team' && teams.length > 0) {
+      if (config.teamAssignment === 'random') {
+        // Assign host to first team
+        teams[0].playerIds.push(hostPlayer.id);
+        hostPlayer.teamId = teams[0].id;
+        console.log(`👑 Host assigned to ${teams[0].name}`);
+      }
+      // For manual mode, host starts unassigned like other players
+    }
+
     this.rooms.set(roomId, room);
     this.roomCodeToId.set(code, roomId);
 

@@ -26,6 +26,9 @@ const GameScreen = () => {
     winnerTeamId?: string;
   } | null>(null);
   const [gameFinished, setGameFinished] = useState<any>(null);
+  const [spectatingPlayerId, setSpectatingPlayerId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     if (!socket || !currentRoom) {
@@ -467,6 +470,15 @@ const GameScreen = () => {
 
     const MiniGameComponent = gameInfo.component;
 
+    // Check if current player is actively playing this round
+    const isActivePlayer = currentRound.selectedPlayers?.includes(
+      currentPlayer?.id || ""
+    );
+    const activePlayers =
+      currentRound.selectedPlayers
+        ?.map((id) => currentRoom.players.find((p) => p.id === id))
+        .filter(Boolean) || [];
+
     const handleComplete = (score: number, time: number) => {
       // Submit score to server
       if (!currentPlayer) return;
@@ -479,8 +491,159 @@ const GameScreen = () => {
       });
     };
 
+    // If player is spectating
+    if (!isActivePlayer && currentRoom.mode === "team") {
+      // Get current player's team
+      const myTeam = currentRoom.teams.find(
+        (t) => t.id === currentPlayer?.teamId
+      );
+      const myTeammate = activePlayers.find((p) => p?.teamId === myTeam?.id);
+
+      // Get opponent teams' active players
+      const opponents = activePlayers.filter((p) => p?.teamId !== myTeam?.id);
+
+      // Default to spectating teammate
+      const defaultSpectateId =
+        spectatingPlayerId || myTeammate?.id || activePlayers[0]?.id;
+      const spectatedPlayer = currentRoom.players.find(
+        (p) => p.id === defaultSpectateId
+      );
+      const spectatedTeam = currentRoom.teams.find(
+        (t) => t.id === spectatedPlayer?.teamId
+      );
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 to-purple-900 p-4">
+          {/* Spectator Header */}
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-slate-800/80 backdrop-blur-lg rounded-2xl p-6 mb-4">
+              <div className="text-center mb-4">
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  👁️ Spectator Mode
+                </h2>
+                <p className="text-gray-300">
+                  Round {currentRound.roundNumber} • {gameInfo.name}
+                </p>
+              </div>
+
+              {/* Active Players Selection */}
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-white mb-3 text-center">
+                  Active Players - Click to spectate
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {activePlayers.map((player) => {
+                    if (!player) return null;
+                    const playerTeam = currentRoom.teams.find(
+                      (t) => t.id === player.teamId
+                    );
+                    const isMyTeammate = player.teamId === myTeam?.id;
+                    const isCurrentlySpectating =
+                      defaultSpectateId === player.id;
+
+                    return (
+                      <button
+                        key={player.id}
+                        onClick={() => setSpectatingPlayerId(player.id)}
+                        className={`p-4 rounded-xl transition-all ${
+                          isCurrentlySpectating
+                            ? "bg-purple-500 border-2 border-purple-300 scale-105"
+                            : "bg-slate-700 hover:bg-slate-600 border-2 border-transparent"
+                        }`}
+                        style={
+                          playerTeam
+                            ? {
+                                borderLeftColor: playerTeam.color,
+                                borderLeftWidth: "4px",
+                              }
+                            : {}
+                        }
+                      >
+                        <div className="text-center">
+                          <div className="text-2xl mb-1">
+                            {player.avatar || "👤"}
+                          </div>
+                          <div className="font-bold text-white text-sm">
+                            {player.name}
+                          </div>
+                          {playerTeam && (
+                            <div
+                              className="text-xs mt-1"
+                              style={{ color: playerTeam.color }}
+                            >
+                              {playerTeam.name}
+                            </div>
+                          )}
+                          {isMyTeammate && (
+                            <div className="text-xs text-green-400 mt-1">
+                              ⭐ Teammate
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Currently Spectating */}
+              {spectatedPlayer && (
+                <div className="text-center p-4 bg-slate-700/50 rounded-xl">
+                  <p className="text-gray-300 text-sm mb-1">
+                    Currently watching
+                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-2xl">
+                      {spectatedPlayer.avatar || "👤"}
+                    </span>
+                    <span className="text-xl font-bold text-white">
+                      {spectatedPlayer.name}
+                    </span>
+                    {spectatedTeam && (
+                      <span
+                        className="text-sm px-2 py-1 rounded"
+                        style={{
+                          backgroundColor: spectatedTeam.color + "40",
+                          color: spectatedTeam.color,
+                        }}
+                      >
+                        {spectatedTeam.name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Spectator View Message */}
+            <div className="bg-slate-800/80 backdrop-blur-lg rounded-2xl p-8 text-center">
+              <div className="text-6xl mb-4">🎮</div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                Watching {spectatedPlayer?.name}
+              </h3>
+              <p className="text-gray-300 mb-4">
+                You'll play in an upcoming round!
+              </p>
+              <div className="text-sm text-gray-400">
+                In team mode, players take turns representing their team each
+                round.
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Active player - show the actual minigame
     return (
       <div className="min-h-screen">
+        {currentRoom.mode === "team" && (
+          <div className="bg-purple-600 text-white text-center py-2 px-4">
+            <p className="font-bold">
+              🎮 You're playing for your team this round!
+            </p>
+          </div>
+        )}
         <MiniGameComponent
           duration={minigameData.config.duration}
           onComplete={handleComplete}
