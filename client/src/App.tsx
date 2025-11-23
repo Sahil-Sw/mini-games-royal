@@ -7,6 +7,7 @@ import LobbyScreen from "./screens/LobbyScreen";
 import GameScreen from "./screens/GameScreen";
 import SinglePlayerScreen from "./screens/SinglePlayerScreen";
 import SinglePlayerGameScreen from "./screens/SinglePlayerGameScreen";
+import HowToPlayScreen from "./screens/HowToPlayScreen";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
               path="/single-player/game"
               element={<SinglePlayerGameScreen />}
             />
+            <Route path="/how-to-play" element={<HowToPlayScreen />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
