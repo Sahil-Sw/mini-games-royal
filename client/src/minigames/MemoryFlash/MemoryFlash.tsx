@@ -51,6 +51,9 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({
   );
 
   useEffect(() => {
+    // Only initialize game state if actively playing
+    if (!isActive) return;
+
     generateSequence(3); // Start with 3 items
 
     const timer = setInterval(() => {
@@ -65,7 +68,7 @@ const MemoryFlash: React.FC<MemoryFlashProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [isActive]);
 
   const generateSequence = (length: number) => {
     const newSequence = Array.from(

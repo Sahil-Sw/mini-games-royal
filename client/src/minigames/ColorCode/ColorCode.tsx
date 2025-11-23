@@ -50,6 +50,9 @@ const ColorCode: React.FC<ColorCodeProps> = ({
   );
 
   useEffect(() => {
+    // Only initialize game state if actively playing
+    if (!isActive) return;
+
     generateCode();
 
     const timer = setInterval(() => {
@@ -64,7 +67,7 @@ const ColorCode: React.FC<ColorCodeProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [isActive]);
 
   const generateCode = () => {
     const codeLength = 4;

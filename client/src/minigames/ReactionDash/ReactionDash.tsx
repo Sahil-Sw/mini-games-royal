@@ -43,6 +43,9 @@ const ReactionDash: React.FC<ReactionDashProps> = ({
   );
 
   useEffect(() => {
+    // Only initialize game state if actively playing
+    if (!isActive) return;
+
     startTimeRef.current = Date.now();
     scheduleColorChange();
 
@@ -58,7 +61,7 @@ const ReactionDash: React.FC<ReactionDashProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [isActive]);
 
   const scheduleColorChange = () => {
     const delay = Math.random() * 3000 + 2000; // 2-5 seconds

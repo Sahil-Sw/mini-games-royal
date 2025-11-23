@@ -65,6 +65,9 @@ const WordSprint: React.FC<WordSprintProps> = ({
   );
 
   useEffect(() => {
+    // Only initialize game state if actively playing
+    if (!isActive) return;
+
     generateWord();
 
     const timer = setInterval(() => {
@@ -79,7 +82,7 @@ const WordSprint: React.FC<WordSprintProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [isActive]);
 
   const generateWord = () => {
     const word = WORDS[Math.floor(Math.random() * WORDS.length)];

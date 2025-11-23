@@ -50,10 +50,19 @@ const GameScreen = () => {
     });
 
     socket.on("minigame:spectateState", (playerId, state) => {
-      // Only update if we're spectating this player
-      if (spectatingPlayerId === playerId || !spectatingPlayerId) {
-        setSpectateState(state);
-      }
+      // Update spectate state for the player we're watching
+      setSpectateState((prevState: any) => {
+        // If we're spectating this specific player, update the state
+        if (spectatingPlayerId === playerId) {
+          return state;
+        }
+        // If we haven't selected anyone yet, show the first active player's state
+        if (!spectatingPlayerId) {
+          return state;
+        }
+        // Otherwise, keep the previous state
+        return prevState;
+      });
     });
 
     socket.on("game:roundEnd", (results, winnerId, winnerTeamId) => {
@@ -79,7 +88,7 @@ const GameScreen = () => {
       socket.off("room:updated");
       socket.off("minigame:spectateState");
     };
-  }, [socket, currentRoom, navigate]);
+  }, [socket, currentRoom, navigate, spectatingPlayerId]);
 
   if (!currentRoom) {
     return (

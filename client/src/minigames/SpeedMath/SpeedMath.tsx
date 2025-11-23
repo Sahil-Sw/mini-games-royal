@@ -45,6 +45,9 @@ const SpeedMath: React.FC<SpeedMathProps> = ({
   );
 
   useEffect(() => {
+    // Only initialize game state if actively playing
+    if (!isActive) return;
+
     generateQuestion();
 
     const timer = setInterval(() => {
@@ -59,7 +62,7 @@ const SpeedMath: React.FC<SpeedMathProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [isActive]);
 
   const generateQuestion = () => {
     const operators = ["+", "-", "*"];
